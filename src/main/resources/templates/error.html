@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body >
+
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+<div class="panel auth-panel"><span class="eyebrow">BÓNG BAKERY</span><h1 class="h3 mt-3">Chưa thể thực hiện thao tác</h1><p th:text="${message ?: 'Trang không tồn tại hoặc bạn chưa có quyền truy cập.'}"></p><a class="btn btn-primary" th:href="@{/}">Về trang chủ</a><a class="btn btn-link" th:href="@{/cart}">Kiểm tra giỏ hàng</a><form class="mt-3" th:action="@{/cart/clear}" method="post"><button class="btn btn-outline-secondary">Làm trống giỏ hàng</button></form></div>
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+
+</body></html>

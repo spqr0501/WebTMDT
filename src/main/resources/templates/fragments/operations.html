@@ -1,0 +1,36 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="designs" class="panel card card-body mt-4">
+ <span class="eyebrow">THIẾT KẾ DÀNH RIÊNG CHO BẠN</span><h2 class="h5 mt-2">Duyệt mẫu bánh trước khi làm</h2>
+ <p class="small text-muted">Kiểm tra màu sắc, hình trang trí, lời chúc và chi tiết trong mô tả. Duyệt mẫu và đồng ý báo giá là hai bước riêng. Mỗi mẫu mới cần được khách duyệt lại.</p>
+ <div class="alert alert-light" th:if="${#lists.isEmpty(designs)}">Chưa có mẫu từ cửa hàng. Sau khi báo giá, cửa hàng sẽ gửi ảnh mẫu tại đây.</div>
+ <article th:each="d,iter:${designs}" class="border rounded p-3 mb-3">
+  <div class="d-flex justify-content-between flex-wrap"><h3 class="h6" th:text="${'Mẫu #'+d.id+(iter.first?' · Mới nhất':' · Lịch sử')}"></h3><span class="badge badge-light bg-light text-dark p-2" th:text="${d.statusLabel}"></span></div>
+  <p class="small text-muted" th:text="${#temporals.format(d.createdAt,'dd/MM/yyyy HH:mm')}"></p>
+  <a th:href="${d.image}" target="_blank" rel="noopener"><img th:src="${d.image}" alt="Mẫu thiết kế do cửa hàng gửi" class="img-fluid rounded mb-3" style="max-height:420px" loading="lazy"></a>
+  <p style="white-space:pre-wrap" th:text="${d.description}"></p>
+  <p th:if="${!#strings.isEmpty(d.feedback)}" style="white-space:pre-wrap" th:text="${'Ý kiến khách: '+d.feedback}"></p>
+  <p class="small" th:if="${d.respondedAt != null}" th:text="${'Phản hồi lúc '+#temporals.format(d.respondedAt,'dd/MM/yyyy HH:mm')}"></p>
+  <form th:if="${!isAdmin and iter.first and d.status.name() == 'PENDING' and (request.status.name() == 'QUOTED' or request.status.name() == 'ACCEPTED')}" th:action="@{/custom-cakes/{id}/designs/{designId}(id=${request.id},designId=${d.id})}" method="post">
+   <label th:for="${'designFeedback'+d.id}">Ý kiến / chi tiết muốn chỉnh sửa</label><textarea th:id="${'designFeedback'+d.id}" name="feedback" maxlength="1000" rows="3" class="form-control mb-3" placeholder="Ví dụ: đổi nơ sang màu hồng, lời chúc ghi…"></textarea>
+   <div class="d-flex flex-wrap gap-2"><button class="btn btn-primary mr-2" name="approve" value="true">Duyệt mẫu này</button><button class="btn btn-outline-secondary" name="approve" value="false">Đề nghị chỉnh sửa</button></div>
+   <p class="small text-muted mt-2">Đề nghị chỉnh sửa cần có nội dung. Mẫu cũ sẽ được giữ trong lịch sử.</p>
+  </form>
+ </article>
+ <form th:if="${isAdmin and (request.status.name() == 'QUOTED' or request.status.name() == 'ACCEPTED')}" th:action="@{/admin/custom-cakes/{id}/designs(id=${request.id})}" method="post" enctype="multipart/form-data" class="border rounded p-3">
+  <h3 class="h6">Gửi phiên bản mẫu mới</h3><label for="designImage">Ảnh mẫu JPG/PNG (tối đa 5 MB)</label><input id="designImage" type="file" name="image" accept="image/png,image/jpeg" required class="form-control-file mb-3">
+  <label for="designDescription">Màu sắc, trang trí, lời chúc và nội dung chốt với khách</label><textarea id="designDescription" name="description" maxlength="1500" rows="4" required class="form-control mb-3"></textarea>
+  <p class="small text-muted">Gửi mẫu mới sẽ thay thế hiệu lực duyệt mẫu trước. Không đổi báo giá trong bước này.</p><button class="btn btn-primary">Gửi mẫu và thông báo cho khách</button>
+ </form>
+</section>
+<section th:fragment="orderPickup" class="panel card card-body mt-4" th:if="${order.fulfillmentMethod.name() == 'PICKUP' and order.status.name() != 'CANCELLED' and order.status.name() != 'COMPLETED'}">
+ <h2 class="h5">Mã QR nhận bánh tại cửa hàng</h2><p>Đưa QR này cho nhân viên khi đến nhận. Vui lòng giữ riêng mã nhận bánh.</p>
+ <img th:src="@{/orders/{id}/pickup.png(id=${order.id})}" alt="Mã QR nhận bánh" width="240" height="240" style="max-width:100%;object-fit:contain;align-self:flex-start">
+ <details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details>
+ <p class="small text-muted mt-3 mb-0">Nhân viên sẽ kiểm tra trạng thái bánh và thanh toán trước khi bàn giao. QR không phải mã thanh toán.</p>
+</section>
+<section th:fragment="customPickup" class="panel card card-body mt-4" th:if="${request.fulfillmentMethod.name() == 'PICKUP' and (request.status.name() == 'ACCEPTED' or request.status.name() == 'PREPARING' or request.status.name() == 'READY')}">
+ <h2 class="h5">Mã QR nhận bánh riêng</h2><p>Đưa QR này cho nhân viên khi đến nhận bánh. Giữ riêng mã của bạn.</p>
+ <img th:src="@{/custom-cakes/{id}/pickup.png(id=${request.id})}" alt="Mã QR nhận bánh riêng" width="240" height="240" style="max-width:100%;object-fit:contain;align-self:flex-start">
+ <details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details><p class="small text-muted mt-3 mb-0">QR dùng để tra đơn. Chỉ bàn giao khi bánh sẵn sàng và đã thanh toán đủ.</p>
+</section>
+</body></html>

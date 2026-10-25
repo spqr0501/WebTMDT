@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body >
+
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+
+<div class="panel auth-panel"><span class="eyebrow">MỪNG BẠN TRỞ LẠI</span><h1 class="section-title mt-2">Chào bạn trở lại</h1><p class="muted">Đăng nhập để tiếp tục đặt bánh.</p><div th:if="${param.error}" class="alert alert-danger">Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.</div><div th:if="${param.registered}" class="alert alert-success">Đăng ký thành công. Bạn có thể đăng nhập.</div><div th:if="${param.reset}" class="alert alert-success">Đã đổi mật khẩu. Vui lòng đăng nhập lại.</div><form th:action="@{/login}" method="post"><label for="username" class="form-label">Email</label><input id="username" name="username" type="email" required class="form-control mb-3" autocomplete="username"><label for="password" class="form-label">Mật khẩu</label><div th:replace="~{fragments/password :: field('password','password','current-password',null)}"></div><button class="btn btn-primary w-100">Đăng nhập</button></form><a class="d-block mt-3" th:href="@{/forgot-password}">Quên mật khẩu?</a><p class="mt-4 mb-0">Chưa có tài khoản? <a th:href="@{/register}" class="text-dark">Đăng ký</a></p></div>
+
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+
+</body></html>

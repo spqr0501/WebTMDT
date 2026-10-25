@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.5.7</version><relativePath/></parent>
+ <groupId>com.example</groupId><artifactId>WebTMDT</artifactId><version>1.0.0</version><name>Bóng Bakery</name>
+ <properties><java.version>17</java.version><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding></properties>
+ <dependencies>
+<dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId><version>6.0.0</version></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-mail</artifactId></dependency>
+<dependency><groupId>com.google.zxing</groupId><artifactId>javase</artifactId><version>3.5.3</version></dependency>
+<dependency><groupId>org.apache.pdfbox</groupId><artifactId>pdfbox</artifactId><version>3.0.8</version></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-thymeleaf</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
+<dependency><groupId>org.thymeleaf.extras</groupId><artifactId>thymeleaf-extras-springsecurity6</artifactId></dependency>
+<dependency><groupId>com.microsoft.sqlserver</groupId><artifactId>mssql-jdbc</artifactId><scope>runtime</scope></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+<dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-test</artifactId><scope>test</scope></dependency>
+<dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
+ </dependencies>
+ <build><plugins><plugin>
+  <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
+  <configuration><jvmArguments>-Djava.library.path="${project.basedir}/native"</jvmArguments></configuration>
+ </plugin></plugins></build>
+ <profiles>
+  <profile>
+   <id>windows-auth</id>
+   <activation><os><family>Windows</family></os></activation>
+   <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.8.1</version>
+    <executions><execution><id>tai-thu-vien-xac-thuc-windows</id><phase>initialize</phase><goals><goal>copy</goal></goals>
+     <configuration><artifactItems><artifactItem>
+      <groupId>com.microsoft.sqlserver</groupId><artifactId>mssql-jdbc_auth</artifactId><version>12.10.2.x64</version><type>dll</type>
+      <outputDirectory>${project.basedir}/native</outputDirectory>
+     </artifactItem></artifactItems></configuration>
+    </execution></executions>
+   </plugin></plugins></build>
+  </profile>
+ </profiles>
+</project>

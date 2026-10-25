@@ -1,0 +1,79 @@
+02:06:13.145 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.example.demo.CakeShopIntegrationTests]: CakeShopIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+02:06:13.378 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.example.demo.WebTmdtApplication for test class com.example.demo.CakeShopIntegrationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.7)
+
+2026-10-25T02:06:14.247+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.CakeShopIntegrationTests  : Starting CakeShopIntegrationTests using Java 23.0.2 with PID 19252 (started by thien in D:\Eclipse IDE Web V2\WebTMDT)
+2026-10-25T02:06:14.255+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.CakeShopIntegrationTests  : The following 1 profile is active: "test"
+2026-10-25T02:06:15.595+07:00  INFO 19252 --- [Maison Cake Shop] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-25T02:06:15.951+07:00  INFO 19252 --- [Maison Cake Shop] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 336 ms. Found 11 JPA repository interfaces.
+2026-10-25T02:06:16.794+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-25T02:06:16.918+07:00  INFO 19252 --- [Maison Cake Shop] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.33.Final
+2026-10-25T02:06:16.967+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-10-25T02:06:17.428+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-25T02:06:17.471+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-25T02:06:17.881+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:cakes user=SA
+2026-10-25T02:06:17.889+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-25T02:06:18.029+07:00  INFO 19252 --- [Maison Cake Shop] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-25T02:06:19.477+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-25T02:06:19.570+07:00  INFO 19252 --- [Maison Cake Shop] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-25T02:06:20.049+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-25T02:06:22.027+07:00  INFO 19252 --- [Maison Cake Shop] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-25T02:06:23.061+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-25T02:06:23.061+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-25T02:06:23.061+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-25T02:06:23.094+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.CakeShopIntegrationTests  : Started CakeShopIntegrationTests in 9.447 seconds (process running for 11.398)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\thien\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-25T02:06:34.125+07:00  INFO 19252 --- [Maison Cake Shop] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.example.demo.WebTmdtApplicationTests]: WebTmdtApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-25T02:06:34.126+07:00  INFO 19252 --- [Maison Cake Shop] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.example.demo.WebTmdtApplication for test class com.example.demo.WebTmdtApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.7)
+
+2026-10-25T02:06:34.177+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.WebTmdtApplicationTests   : Starting WebTmdtApplicationTests using Java 23.0.2 with PID 19252 (started by thien in D:\Eclipse IDE Web V2\WebTMDT)
+2026-10-25T02:06:34.177+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.WebTmdtApplicationTests   : The following 1 profile is active: "test"
+2026-10-25T02:06:34.666+07:00  INFO 19252 --- [Maison Cake Shop] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-25T02:06:34.698+07:00  INFO 19252 --- [Maison Cake Shop] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27 ms. Found 11 JPA repository interfaces.
+2026-10-25T02:06:34.840+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-25T02:06:34.846+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-10-25T02:06:34.859+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-25T02:06:34.859+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-25T02:06:34.859+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:cakes user=SA
+2026-10-25T02:06:34.859+07:00  INFO 19252 --- [Maison Cake Shop] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-25T02:06:34.867+07:00  INFO 19252 --- [Maison Cake Shop] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-25T02:06:35.043+07:00  INFO 19252 --- [Maison Cake Shop] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-25T02:06:35.085+07:00  INFO 19252 --- [Maison Cake Shop] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-25T02:06:35.303+07:00  INFO 19252 --- [Maison Cake Shop] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-25T02:06:35.599+07:00  INFO 19252 --- [Maison Cake Shop] [           main] c.example.demo.WebTmdtApplicationTests   : Started WebTmdtApplicationTests in 1.47 seconds (process running for 23.899)

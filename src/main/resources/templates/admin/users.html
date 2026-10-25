@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/admin :: head}"></head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+<header th:replace="~{fragments/admin :: header}"></header>
+<main class="content-wrapper p-4">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+<div class="admin-heading"><div><span class="admin-overline">BÓNG BAKERY / QUẢN TRỊ</span><h1 class="h2 mb-4">Người dùng</h1><p>Quản lý tài khoản và giữ kết nối với khách hàng của cửa hàng.</p></div><span class="admin-heading-icon" aria-hidden="true"><i class="fas fa-user-friends"></i></span></div><div class="card card-body table-responsive"><table class="table"><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody><tr th:each="u:${page.content}"><td><span class="admin-avatar" aria-hidden="true" th:text="${#strings.substring(u.name,0,1)}"></span><span th:text="${u.name}"></span></td><td th:text="${u.email}"></td><td th:text="${u.role.name() == 'ADMIN' ? 'Quản trị viên' : 'Khách hàng'}"></td><td><span th:class="${u.enabled?'state-pill state-enabled':'state-pill state-disabled'}" th:text="${u.enabled?'Hoạt động':'Đã khóa'}"></span></td><td><form th:if="${u.role.name() == 'USER'}" th:action="@{/admin/users/{id}/enabled(id=${u.id})}" method="post"><input type="hidden" name="enabled" th:value="${!u.enabled}"><button class="btn btn-outline-secondary btn-sm" th:text="${u.enabled ? 'Khóa tài khoản' : 'Mở khóa'}"></button></form></td></tr></tbody></table></div><p class="text-muted">Tài khoản quản trị được tạo qua cấu hình khởi động. Không cho phép tự nâng quyền từ biểu mẫu.</p><nav class="d-flex my-4" aria-label="Phân trang"><a class="btn btn-outline-secondary" th:if="${page.hasPrevious()}" th:href="@{/admin/users(page=${page.number - 1})}">← Trước</a><span class="p-2" th:text="${'Trang ' + (page.number + 1)}"></span><a class="btn btn-outline-secondary" th:if="${page.hasNext()}" th:href="@{/admin/users(page=${page.number + 1})}">Sau →</a></nav>
+</main>
+<footer th:replace="~{fragments/admin :: footer}"></footer>
+</div>
+</body></html>

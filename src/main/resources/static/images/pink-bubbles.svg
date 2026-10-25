@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="680" viewBox="0 0 680 680">
+ <defs>
+  <radialGradient id="balloon-pink" cx="29%" cy="23%" r="82%">
+   <stop offset="0" stop-color="#fffafd"/>
+   <stop offset=".3" stop-color="#ffeaf4"/>
+   <stop offset=".7" stop-color="#f4bfd9"/>
+   <stop offset="1" stop-color="#df9abc"/>
+  </radialGradient>
+  <g id="balloon">
+   <!-- Dây buộc rủ xuống, uốn nhẹ theo từng quả bóng. -->
+   <path d="M0 67C-15 94 19 113 5 141S-11 183 2 210" fill="none" stroke="#be7299" stroke-opacity=".65" stroke-width="1.35" stroke-linecap="round"/>
+   <!-- Bóng latex: bầu phía trên và thuôn dần về nút thắt. -->
+   <path d="M0-70C-34-70-55-45-53-12C-51 20-25 48-7 59C-3 62 3 62 7 59C25 48 51 20 53-12C55-45 34-70 0-70Z" fill="url(#balloon-pink)" stroke="#e3acc8" stroke-opacity=".65" stroke-width=".85"/>
+   <path d="M-34-27C-31-43-21-53-10-55" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="5" stroke-linecap="round"/>
+   <ellipse cx="-34" cy="-13" rx="2.4" ry="5" fill="#fff" fill-opacity=".48" transform="rotate(-12 -34 -13)"/>
+   <!-- Cổ bóng và phần cao su còn lại sau khi thắt. -->
+   <path d="M-4 59L-6 63L6 63L4 59Z" fill="#d68aaf"/>
+   <path d="M-2 63L-7 72Q0 69 7 72L2 63Z" fill="#e6a5c6" stroke="#ce87ab" stroke-opacity=".6" stroke-width=".7"/>
+   <path d="M-4 63Q0 65 4 63" fill="none" stroke="#ba7196" stroke-opacity=".55" stroke-width="1"/>
+  </g>
+ </defs>
+ <use href="#balloon" transform="translate(105 100) rotate(-9) scale(.95)" opacity=".64"/>
+ <use href="#balloon" transform="translate(560 100) rotate(11) scale(.72)" opacity=".49"/>
+ <use href="#balloon" transform="translate(355 245) rotate(7) scale(1.12)" opacity=".55"/>
+ <use href="#balloon" transform="translate(100 435) rotate(-7) scale(.8)" opacity=".5"/>
+ <use href="#balloon" transform="translate(305 510) rotate(10) scale(.64)" opacity=".44"/>
+ <use href="#balloon" transform="translate(560 480) rotate(-9) scale(.83)" opacity=".58"/>
+</svg>

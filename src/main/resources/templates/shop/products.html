@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body >
+
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+
+<span class="eyebrow">NGỌT NGÀO CHO MỌI KHOẢNH KHẮC</span><h1 class="section-title mt-2 mb-4">Bộ sưu tập bánh</h1>
+<p class="small muted">Ảnh minh họa kiểu bánh. <a th:href="@{/image-credits}">Xem tác giả và nguồn ảnh</a>.</p>
+<nav aria-label="Chọn danh mục bánh" class="mb-4"><a class="category-pill" th:href="@{/products}">Tất cả bánh</a><a class="category-pill" th:each="c:${categories}" th:href="@{/products(category=${c.id})}" th:text="${c.name}" th:attr="aria-current=${category == c.id ? 'page' : null}"></a></nav>
+<form th:action="@{/products}" method="get" class="panel row g-3 mb-4"><div class="col-md-4"><label for="q" class="form-label">Tìm bánh</label><div class="search-field"><input id="q" name="q" class="form-control js-cake-search" th:value="${q}" maxlength="100" th:attr="data-search-url=@{/products/suggestions},data-products-url=@{/products},data-placeholder-url=@{/images/cake.svg}" autocomplete="off" placeholder="Tên bánh bạn yêu thích"></div></div><div class="col-md-2"><label for="category" class="form-label">Danh mục</label><select id="category" name="category" class="form-select"><option value="">Tất cả</option><option th:each="c:${categories}" th:value="${c.id}" th:text="${c.name}" th:selected="${category == c.id}"></option></select></div><div class="col-md-2"><label for="min" class="form-label">Giá từ (đ)</label><input id="min" type="number" min="0" name="min" th:value="${min}" class="form-control"></div><div class="col-md-2"><label for="max" class="form-label">Đến (đ)</label><input id="max" type="number" min="0" name="max" th:value="${max}" class="form-control"></div><div class="col-md-2"><label for="sort" class="form-label">Sắp xếp</label><select id="sort" name="sort" class="form-select"><option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option><option value="priceAsc" th:selected="${sort == 'priceAsc'}">Giá tăng dần</option><option value="priceDesc" th:selected="${sort == 'priceDesc'}">Giá giảm dần</option></select></div><div><button class="btn btn-primary">Tìm &amp; lọc</button> <a th:href="@{/products}" class="btn btn-link text-dark">Xóa bộ lọc</a></div></form>
+<p class="muted" th:text="${page.totalElements + ' sản phẩm'}"></p><div th:replace="~{fragments/shop :: cards(${page.content})}"></div><div class="panel" th:if="${page.empty}">Chưa tìm thấy bánh phù hợp. Hãy thử từ khóa hoặc khoảng giá khác.</div>
+<nav class="d-flex gap-3 mt-4" aria-label="Phân trang"><a th:if="${page.hasPrevious()}" class="btn btn-outline-dark" th:href="@{/products(q=${q},category=${category},min=${min},max=${max},sort=${sort},page=${page.number - 1})}">← Trước</a><span class="p-2" th:text="${'Trang ' + (page.number + 1) + ' / ' + T(java.lang.Math).max(1,page.totalPages)}"></span><a th:if="${page.hasNext()}" class="btn btn-outline-dark" th:href="@{/products(q=${q},category=${category},min=${min},max=${max},sort=${sort},page=${page.number + 1})}">Sau →</a></nav>
+
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+
+</body></html>

@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><body>
+<aside th:fragment="widget" class="bakery-assistant" data-assistant-widget th:attr="data-history-url=@{/assistant/history},data-message-url=@{/assistant/message},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token},data-authenticated=${#authorization.expression('isAuthenticated()')}">
+ <section id="bakeryAssistantPanel" class="assistant-panel" role="dialog" aria-modal="false" aria-labelledby="assistantWidgetTitle" hidden>
+  <header class="assistant-panel-heading"><div class="assistant-avatar" aria-hidden="true">✦</div><div><h2 id="assistantWidgetTitle">Bóng Bakery</h2><p>Trợ lý tư vấn bánh &amp; chính sách</p></div><button type="button" class="assistant-icon-button" data-assistant-close aria-label="Đóng trò chuyện">×</button></header>
+  <div class="assistant-disclosure">Tra cứu từ dữ liệu cửa hàng, có dẫn nguồn. Không phải AI tạo sinh.</div>
+  <div class="assistant-widget-messages" data-assistant-messages role="log" aria-label="Nội dung trò chuyện" aria-live="polite" aria-relevant="additions">
+   <div class="assistant-bubble assistant-bubble-bot"><strong>Chào bạn, hôm nay mình chọn bánh gì?</strong><p>Tôi có thể tìm bánh theo ngân sách, tra thành phần, bảo quản và chính sách cửa hàng.</p></div>
+  </div>
+  <div class="assistant-widget-error" data-assistant-error role="status" hidden></div>
+  <div sec:authorize="isAuthenticated()" class="assistant-widget-controls">
+   <div class="assistant-quick-questions"><button type="button" data-assistant-prompt="Gợi ý bánh kem dưới 500k">Gợi ý bánh</button><button type="button" data-assistant-prompt="Nhận tại cửa hàng cần cọc bao nhiêu?">Cọc nhận bánh</button><button type="button" data-assistant-prompt="Điều kiện đổi trả và hoàn tiền">Đổi trả</button></div>
+   <form data-assistant-form class="assistant-compose"><label for="assistantWidgetQuestion" class="visually-hidden">Nhập câu hỏi cho trợ lý</label><input id="assistantWidgetQuestion" name="question" maxlength="600" required autocomplete="off" placeholder="Bạn muốn tìm bánh gì?" data-assistant-input><button type="submit" aria-label="Gửi câu hỏi" title="Gửi câu hỏi" data-assistant-submit>➤</button></form>
+   <nav class="assistant-widget-links" aria-label="Hỗ trợ thêm"><a th:href="@{/support/new}">Gửi phiếu cho nhân viên</a><a th:href="@{/assistant}">Mở trang đầy đủ ↗</a></nav>
+  </div>
+  <div sec:authorize="isAnonymous()" class="assistant-widget-login"><p>Đăng nhập để trò chuyện và theo dõi phản hồi của cửa hàng.</p><a class="btn btn-primary btn-sm" th:href="@{/login}">Đăng nhập</a><a th:href="@{/policies}" class="ms-3">Xem chính sách</a></div>
+ </section>
+ <button type="button" class="assistant-launcher" data-assistant-toggle aria-controls="bakeryAssistantPanel" aria-expanded="false" aria-label="Mở trợ lý Bóng Bakery"><span class="assistant-launcher-symbol" aria-hidden="true"><svg viewBox="0 0 32 32" width="30" height="30" fill="none"><path d="M25 21c3-2 4-5 3-9C27 6 21 3 15 4S4 9 4 15s5 10 11 10h3l6 4-1-6 2-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 14h1m5 0h1m5 0h1" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span><span class="assistant-launcher-close" aria-hidden="true">×</span><span class="assistant-online-dot" aria-hidden="true"></span></button>
+ <span class="assistant-launcher-hint" aria-hidden="true">Cần chọn bánh?</span>
+</aside>
+</body></html>

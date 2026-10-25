@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/admin :: head}"></head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+<header th:replace="~{fragments/admin :: header}"></header>
+<main class="content-wrapper p-4">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+<div class="admin-heading"><div><span class="admin-overline">BÓNG BAKERY / QUẢN TRỊ</span><h1 class="h2 mb-4">Danh mục bánh</h1><p>Sắp xếp bộ sưu tập để khách dễ tìm chiếc bánh phù hợp.</p></div><span class="admin-heading-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span></div><div class="row"><div class="col-md-7"><div class="card card-body table-responsive"><table class="table"><thead><tr><th>Tên danh mục</th><th>Mô tả</th><th>Thao tác</th></tr></thead><tbody><tr th:each="c:${categories}"><td th:text="${c.name}"></td><td th:text="${c.description}"></td><td><a class="table-action" th:href="@{/admin/categories/{id}/edit(id=${c.id})}"><i class="far fa-edit mr-1" aria-hidden="true"></i>Sửa</a><form th:action="@{/admin/categories/{id}/delete(id=${c.id})}" method="post"><button class="btn btn-sm btn-outline-danger mt-2">Xóa</button></form></td></tr></tbody></table></div></div><div class="col-md-5"><form class="card card-body" th:action="@{/admin/categories/save}" th:object="${form}" method="post"><h2 class="h5">Thêm / sửa danh mục</h2><input type="hidden" th:field="*{id}"><div th:replace="~{fragments/shop :: errors}"></div><div class="form-group"><label for="name">Tên danh mục</label><input id="name" type="text" th:field="*{name}" class="form-control" required maxlength="100"></div><div class="form-group"><label for="description">Mô tả</label><input id="description" type="text" th:field="*{description}" class="form-control" maxlength="1000"></div><button class="btn btn-primary">Lưu danh mục</button><a class="mt-3" th:href="@{/admin/categories}">Tạo danh mục mới</a></form></div></div>
+</main>
+<footer th:replace="~{fragments/admin :: footer}"></footer>
+</div>
+</body></html>

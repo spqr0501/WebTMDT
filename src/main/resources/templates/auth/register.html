@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body >
+
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+
+<div class="panel auth-panel"><span class="eyebrow">ĐỒNG HÀNH CÙNG BÓNG BAKERY</span><h1 class="section-title mt-2">Tạo tài khoản</h1><form th:action="@{/register}" th:object="${form}" method="post"><div th:replace="~{fragments/shop :: errors}"></div><label for="name" class="form-label">Họ tên</label><input id="name" th:field="*{name}" required maxlength="100" class="form-control mb-3" autocomplete="name"><label for="email" class="form-label">Email</label><input id="email" th:field="*{email}" type="email" required class="form-control mb-3" autocomplete="email"><label for="registerPassword" class="form-label">Mật khẩu (từ 8 ký tự)</label><div th:replace="~{fragments/password :: field('registerPassword','password','new-password',8)}"></div><label for="confirmPassword" class="form-label">Nhập lại mật khẩu</label><div th:replace="~{fragments/password :: field('confirmPassword','confirmPassword','new-password',8)}"></div><p class="small text-danger mb-3" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></p><button class="btn btn-primary w-100">Đăng ký</button></form><a class="d-block mt-3 text-dark" th:href="@{/login}">Đã có tài khoản? Đăng nhập</a></div>
+
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+
+</body></html>

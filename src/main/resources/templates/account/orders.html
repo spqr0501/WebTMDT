@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body >
+
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+<div th:replace="~{fragments/shop :: alerts}"></div>
+<h1 class="h2 mb-4">Đơn bánh của bạn</h1><div class="table-responsive"><table class="table"><thead><tr><th>Mã đơn</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th>Giao / nhận</th><th></th></tr></thead><tbody><tr th:each="o:${page.content}"><td th:text="${'#' + o.id}"></td><td th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}"></td><td th:text="${#numbers.formatDecimal(o.total,0,'POINT',0,'COMMA') + ' đ'}"></td><td th:text="${o.status.label}"></td><td><span th:text="${o.fulfillmentMethod.label}"></span><br><small th:if="${o.deliveryDate != null}" th:text="${#temporals.format(o.deliveryDate,'dd/MM/yyyy')+' · '+o.deliverySlot}"></small><br><span th:if="${o.preorder}" class="badge bg-info">Đặt trước</span></td><td><a th:href="@{/orders/{id}(id=${o.id})}">Chi tiết</a><form th:action="@{/orders/{id}/reorder(id=${o.id})}" method="post" class="mt-2"><button class="btn btn-outline-dark btn-sm">Mua lại</button></form></td></tr></tbody></table></div><p th:if="${page.empty}">Chưa có đơn hàng.</p><nav class="d-flex my-4" aria-label="Phân trang"><a class="btn btn-outline-secondary" th:if="${page.hasPrevious()}" th:href="@{/orders(page=${page.number - 1})}">← Trước</a><span class="p-2" th:text="${'Trang ' + (page.number + 1)}"></span><a class="btn btn-outline-secondary" th:if="${page.hasNext()}" th:href="@{/orders(page=${page.number + 1})}">Sau →</a></nav>
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+
+</body></html>

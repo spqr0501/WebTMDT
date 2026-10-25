@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/shop :: head}"></head>
+<body class="invoice-page">
+<header th:replace="~{fragments/shop :: header}"></header>
+<main class="container main-content">
+ <div class="invoice-toolbar"><a class="btn btn-outline-dark" th:href="@{${orderUrl}}">← Về chi tiết đơn</a><a class="btn btn-primary" th:href="@{${pdfUrl}}">Tải hóa đơn PDF</a></div>
+ <article class="invoice-sheet">
+  <div class="invoice-brand"><div><strong>Bóng Bakery</strong><span>TIỆM BÁNH NGỌT</span></div><div class="invoice-seller"><p th:if="${!#strings.isEmpty(shopAddress)}" th:text="${shopAddress}"></p><p th:if="${!#strings.isEmpty(shopPhone)}" th:text="${shopPhone}"></p></div></div>
+  <div class="invoice-title"><span class="eyebrow">CHỨNG TỪ ĐƠN HÀNG</span><h1 th:text="${invoice.title}"></h1><p th:text="${invoice.code+' · Ngày đặt '+#temporals.format(invoice.createdAt,'dd/MM/yyyy HH:mm')}"></p><span class="order-status" th:text="${invoice.status}"></span></div>
+  <p class="alert alert-warning" th:if="${invoice.cancelled}">Đơn đã hủy / không thể đáp ứng. Không tiếp tục thanh toán. Số tiền cửa hàng đang giữ sẽ được đối soát để hoàn riêng.</p>
+  <div class="invoice-customer"><section><h2>Khách hàng</h2><strong th:text="${invoice.buyer}"></strong><p th:text="${invoice.phone}"></p><p th:text="${invoice.address}"></p></section><section><h2>Giao / nhận bánh</h2><strong th:text="${invoice.fulfillment}"></strong><p th:text="${invoice.schedule}"></p><p th:text="${invoice.paymentPlan}"></p></section></div>
+  <div class="table-responsive"><table class="table invoice-table"><thead><tr><th>Bánh / phụ kiện / nội dung báo giá</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody><tr th:each="line:${invoice.lines}"><td th:text="${line.name}"></td><td th:text="${line.quantity}"></td><td th:text="${#numbers.formatDecimal(line.unitPrice,0,'POINT',0,'COMMA')+' đ'}"></td><td th:text="${#numbers.formatDecimal(line.total,0,'POINT',0,'COMMA')+' đ'}"></td></tr></tbody></table></div>
+  <div class="invoice-summary"><dl><dt>Tiền hàng / báo giá</dt><dd th:text="${#numbers.formatDecimal(invoice.subtotal,0,'POINT',0,'COMMA')+' đ'}"></dd><dt>Giảm giá</dt><dd th:text="${'-'+#numbers.formatDecimal(invoice.discount,0,'POINT',0,'COMMA')+' đ'}"></dd><dt>Phí giao hàng</dt><dd th:text="${#numbers.formatDecimal(invoice.shipping,0,'POINT',0,'COMMA')+' đ'}"></dd><dt class="invoice-total">Tổng cộng</dt><dd class="invoice-total" th:text="${#numbers.formatDecimal(invoice.total,0,'POINT',0,'COMMA')+' đ'}"></dd></dl></div>
+  <p th:if="${invoice.refunded.signum() > 0}" th:text="${'Đã hoàn thực tế: '+#numbers.formatDecimal(invoice.refunded,0,'POINT',0,'COMMA')+' đ'}"></p><section class="invoice-payment"><h2>Thanh toán &amp; tiền cọc</h2><div class="payment-numbers"><div><span>Cần trả trước</span><strong th:text="${#numbers.formatDecimal(invoice.upfront,0,'POINT',0,'COMMA')+' đ'}"></strong></div><div><span>Đã nhận sau hoàn tiền</span><strong th:text="${#numbers.formatDecimal(invoice.paid,0,'POINT',0,'COMMA')+' đ'}"></strong></div><div><span th:text="${invoice.cancelled?'Cửa hàng còn giữ / chờ hoàn':'Còn phải trả'}"></span><strong th:text="${#numbers.formatDecimal(invoice.cancelled?invoice.paid:invoice.remaining,0,'POINT',0,'COMMA')+' đ'}"></strong></div></div></section>
+  <section class="mt-4" th:unless="${#lists.isEmpty(invoice.transactions)}"><h2>Lịch sử đối soát</h2><div class="table-responsive"><table class="table"><thead><tr><th>Ngày</th><th>Loại</th><th>Số tiền</th><th>Tham chiếu</th></tr></thead><tbody><tr th:each="r:${invoice.transactions}"><td th:text="${#temporals.format(r.createdAt,'dd/MM/yyyy HH:mm')}"></td><td th:text="${r.type}"></td><td th:text="${#numbers.formatDecimal(r.amount,0,'POINT',0,'COMMA')+' đ'}"></td><td th:text="${r.reference}"></td></tr></tbody></table></div></section>
+  <p class="invoice-note" th:if="${!#strings.isEmpty(invoice.cakeMessage)}" th:text="${'Lời chúc: '+invoice.cakeMessage}"></p><p class="invoice-note" th:if="${!#strings.isEmpty(invoice.note)}" th:text="${'Ghi chú: '+invoice.note}"></p>
+  <footer class="invoice-footnote"><p>Cảm ơn bạn đã chọn Bóng Bakery cho những điều đáng nhớ.</p><small>Số tiền đã nhận dựa trên giao dịch cửa hàng đã xác nhận. Chứng từ bán hàng nội bộ, không phải hóa đơn điện tử VAT.</small></footer>
+ </article>
+</main>
+<footer th:replace="~{fragments/shop :: footer}"></footer>
+</body></html>
