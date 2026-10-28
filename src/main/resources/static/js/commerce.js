@@ -1,12 +1,13 @@
 // Nhận tại cửa hàng / giao tận nơi: chỉ gửi các trường thuộc lựa chọn hiện tại.
 document.querySelectorAll('[data-fulfillment]').forEach(select => {
   const form = select.closest('form');
+  const fixedDisabled=new WeakSet();form.querySelectorAll('[data-delivery-fields] input:disabled,[data-delivery-fields] select:disabled,[data-pickup-fields] input:disabled,[data-pickup-fields] select:disabled').forEach(field=>fixedDisabled.add(field));
   const change = () => {
     const pickup = select.value === 'PICKUP';
     form.querySelectorAll('[data-delivery-fields], [data-pickup-fields]').forEach(group => {
       const visible = group.hasAttribute('data-pickup-fields') ? pickup : !pickup;
       group.hidden = !visible;
-      group.querySelectorAll('input,textarea,select').forEach(field => { field.disabled = !visible; });
+      group.querySelectorAll('input,textarea,select').forEach(field => { field.disabled = !visible || fixedDisabled.has(field); });
     });
   };
   select.addEventListener('change', change);

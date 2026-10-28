@@ -1,6 +1,6 @@
 # Thiết kế và kế hoạch xây dựng Bóng Bakery
 
-> Cập nhật 25/10/2026: theo môi trường thực tế của người dùng, hệ quản trị đang sử dụng là **Microsoft SQL Server** với Windows Authentication. Dùng `database/01-tao-day-du-sql-server.sql` và hướng dẫn `docs/CHAY-SQL-SERVER.md`. Các phần nhắc MySQL bên dưới ghi lại thiết kế ban đầu; bảng nghiệp vụ và quy tắc mua hàng giữ nguyên, kiểu chữ đã chuyển sang NVARCHAR tương ứng.
+> Cập nhật 25/10/2026: theo môi trường thực tế của người dùng, hệ quản trị đang sử dụng là **Microsoft SQL Server** với Windows Authentication. Dùng `database/BONG_BAKERY_SQL_SERVER.sql` và hướng dẫn `docs/CHAY-SQL-SERVER.md`. Các phần nhắc MySQL bên dưới ghi lại thiết kế ban đầu; bảng nghiệp vụ và quy tắc mua hàng giữ nguyên, kiểu chữ đã chuyển sang NVARCHAR tương ứng.
 
 ## 1. Mục tiêu và phạm vi
 

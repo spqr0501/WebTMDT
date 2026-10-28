@@ -18,10 +18,14 @@ public class SecurityConfig {
   // Đăng nhập luôn về trang chủ, không ghi nhớ yêu cầu nền như /sw.js.
   HttpSessionRequestCache requestCache=new HttpSessionRequestCache();
   requestCache.setRequestMatcher(request->false);
-  http.requestCache(c->c.requestCache(requestCache))
+  http.csrf(c->c.ignoringRequestMatchers("/payments/stripe/webhook")).requestCache(c->c.requestCache(requestCache))
    .authorizeHttpRequests(a->a
+   .requestMatchers(org.springframework.http.HttpMethod.POST,"/payments/stripe/webhook").permitAll()
+   .requestMatchers("/payments/**").authenticated()
    .requestMatchers("/admin/**").hasRole("ADMIN")
-   .requestMatchers("/checkout/**","/orders/**","/account/**","/reviews/**","/notifications/**","/custom-cakes/**","/after-sales/**","/support/**","/assistant/**","/favorites/**").authenticated()
+   .requestMatchers("/shipper/**").hasRole("SHIPPER")
+   .requestMatchers("/api/maps/**","/api/delivery/**").authenticated()
+   .requestMatchers("/checkout/**","/orders/**","/account","/account/**","/reviews/**","/notifications/**","/custom-cakes/**","/after-sales/**","/support/**","/assistant/**","/favorites/**").authenticated()
    .requestMatchers("/","/products/**","/cart/**","/login","/register","/forgot-password","/reset-password","/css/**","/js/**","/images/**","/media/**","/about","/delivery","/care","/contact","/policies","/image-credits","/error").permitAll()
    .anyRequest().denyAll())
    // alwaysUseDefaultTargetUrl cũng xóa yêu cầu cũ còn lưu trong session.

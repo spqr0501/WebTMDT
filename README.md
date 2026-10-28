@@ -1,5 +1,28 @@
 # Tiệm bánh ngọt Bóng Bakery
 
+> Cập nhật 28/10/2026: `database/` chỉ dùng một file chính thức `BONG_BAKERY_SQL_SERVER.sql` cho cài mới. Các file nâng cấp riêng được giữ trong `database/LUU_TRU_SQL_CU_2026-10-28.zip`; các số file bên dưới là lịch sử. Database SPQR đã nâng cấp không cần chạy lại.
+
+## Stripe Sandbox
+
+Đã tích hợp Stripe Checkout cho đơn thường/bánh riêng, cọc 50% hoặc trả đủ khi nhận tại cửa hàng, trang kết quả, webhook và mục giao dịch trong admin. Chỉ dùng sandbox, không thu tiền thật.
+
+Xem [hướng dẫn chạy Stripe trên localhost](docs/STRIPE-SANDBOX.md). Khóa cấu hình riêng ở `.local/` được loại khỏi Git. Kết nối webhook đã thiết lập; chạy lại công cụ bật webhook sau khi khởi động máy, rồi khởi động Spring Boot App. Phần Stripe mới đã biên dịch, chưa chạy kiểm thử giao dịch theo yêu cầu chỉ kiểm thử khi được yêu cầu.
+
+## Trang cá nhân và mua hàng
+
+- Mục Tài khoản → Trang cá nhân (`/account`) gồm thông tin liên hệ, sổ địa chỉ có bản đồ, đánh giá đã viết và đổi mật khẩu.
+- Số lượng vượt tồn được cảnh báo và giữ ở mức có thể mua, tính cả các lựa chọn cùng bánh; giỏ cập nhật nếu tồn giảm.
+- Bộ sưu tập có nút số trang và giữ bộ lọc khi chuyển trang.
+- Xem [hướng dẫn các phần mới](docs/TRANG-CA-NHAN-VA-SO-LUONG.md) và [rà soát trước khi vận hành chính thức](docs/RA-SOAT-WEBSITE-CHINH-THUC.md).
+
+## Bản đồ, shipper và logo
+
+- Địa chỉ và thanh toán có bản đồ chọn ghim, tìm địa chỉ, lấy GPS và nhập địa chỉ bằng tay.
+- Admin có Quản lý shipper, tạo tài khoản và phân công đơn; shipper dùng `/shipper`, khách xem bản đồ từ chi tiết đơn giao tận nơi.
+- GPS chỉ chia sẻ khi shipper chủ động bật cho đơn đang giao; có nút dừng, thời điểm cập nhật và cảnh báo vị trí cũ.
+- Đã dùng logo do chủ cửa hàng cung cấp tại các vị trí thương hiệu chung và hình lớn trang chủ.
+- Xem [hướng dẫn bản đồ và shipper](docs/BAN-DO-VA-SHIPPER.md). Đã kiểm thử ngày 28/10/2026: 87 Java/Spring và 24 JavaScript đạt; xem [kết quả và phạm vi](docs/KET-QUA-KIEM-THU-2026-10-28.md).
+
 ## Bổ sung mới
 
 Báo cáo theo thời gian và PDF, nhập Excel có xem trước, danh sách yêu thích, xóa nến/thiệp và quên mật khẩu (SMTP cấu hình sau). Bộ sưu tập có 13 danh mục × 3 bánh, 39 ảnh lấy trên mạng kèm nguồn, mô tả tiếng Việt đầy đủ.
@@ -31,14 +54,14 @@ Xem [hướng dẫn chạy SQL Server bằng tài khoản Windows](docs/CHAY-SQL
 
 ## Cơ sở dữ liệu và tài liệu
 
-- [File SQL Server đầy đủ, tên bảng/cột tiếng Việt](database/01-tao-day-du-sql-server.sql): các bảng, khóa và chỉ mục, 13 danh mục và 39 bánh mẫu có ảnh và mô tả; tích hợp nâng cấp đến file 12. Chỉ chạy khi chưa có các bảng.
+- [File SQL Server đầy đủ, tên bảng/cột tiếng Việt](database/BONG_BAKERY_SQL_SERVER.sql): các bảng, khóa và chỉ mục, 13 danh mục và 39 bánh mẫu có ảnh và mô tả; đã hợp nhất toàn bộ nâng cấp. Chỉ chạy khi chưa có các bảng.
 - [Thiết kế dữ liệu và kế hoạch](docs/THIET-KE.md).
 - [Quy tắc mã giảm giá](docs/VOUCHER.md).
 - [Kiểm thử](docs/KIEM-THU.md).
 
 Các bảng: `nguoi_dung`, `danh_muc`, `san_pham`, `dia_chi`, `don_hang`, `chi_tiet_don_hang`, `ma_giam_gia`, `luot_su_dung_ma`. Các trường tiếng Việt dùng Unicode; `ddl-auto=validate` kiểm tra cấu trúc, không xóa hay tự sửa database.
 
-Các file `01-schema.sql`, `02-seed.sql`, `03-doi-ten-tu-schema-cu.sql` là bản MySQL cũ để tham khảo, **không chạy chúng trên SQL Server**.
+Thư mục `database/` chỉ còn một file SQL chính thức và [hướng dẫn sử dụng](database/README.md). Các bản rời được lưu nguyên trong `LUU_TRU_SQL_CU_2026-10-28.zip`, gồm cả MySQL cũ; không chạy các bản MySQL trên SQL Server.
 
 ## Lệnh thường dùng
 
@@ -115,7 +138,7 @@ H2 không thay thế kiểm thử tích hợp SQL Server thật. Trước nghi�
 
 ## Nâng cấp trang chi tiết và đánh giá (25/10/2026)
 
-- Database đã có dữ liệu: chạy `database/04-nang-cap-trang-va-danh-gia.sql` một lần trong SSMS, sau đó khởi động lại Spring Boot. Script có thể chạy lại, không xóa dữ liệu cũ. Bản `01-tao-day-du-sql-server.sql` đã bao gồm cấu trúc mới cho cài đặt từ đầu.
+- Cài mới dùng `database/BONG_BAKERY_SQL_SERVER.sql` đã gộp đầy đủ cấu trúc. Database SPQR hiện tại đã được nâng cấp, không cần chạy lại. Các bản nâng cấp lịch sử nằm trong ZIP lưu trữ.
 - Trong Eclipse: Refresh dự án (F5), dừng phiên chạy cũ rồi Run As → Spring Boot App. Giữ cấu hình thư viện Windows Authentication trong `native` như phần hướng dẫn trên.
 - Trang chủ có bánh mới, bánh bán chạy dựa trên đơn hoàn thành, mã giảm giá còn hiệu lực và liên kết thông tin. Không tạo đánh giá giả hoặc số liệu bán hàng giả.
 - Header, footer và thanh tìm kiếm dùng chung tại `templates/fragments/shop.html`; phần quản trị dùng fragment riêng.
@@ -133,7 +156,7 @@ H2 không thay thế kiểm thử tích hợp SQL Server thật. Trước nghi�
 +
 +Đã bổ sung thông báo cho khách/Admin, bước xác nhận đơn, nhận tại cửa hàng, mua lại đơn cũ, mua bánh kèm nến/thiệp và yêu cầu thiết kế bánh có báo giá. Đơn đặt trước hỗ trợ đến 90 ngày; bánh riêng đặt trước 3–90 ngày.
 +
-+Xem thao tác và quy tắc tại [Hướng dẫn chức năng đặt bánh mới](docs/CHUC-NANG-DAT-BANH-MOI.md). Database đang dùng nâng cấp bằng `database/05-thong-bao-combo-va-banh-rieng.sql`; cài mới dùng file 01 đã bao gồm phần bổ sung. Phụ kiện mẫu có tồn bằng 0, nhập tồn thực tế tại Admin → Nến & thiệp.
+Xem thao tác và quy tắc tại [Hướng dẫn chức năng đặt bánh mới](docs/CHUC-NANG-DAT-BANH-MOI.md). Cài mới dùng file tổng chính thức; SPQR đã được nâng cấp. Phụ kiện mẫu có tồn bằng 0, nhập tồn thực tế tại Admin → Nến & thiệp.
 +
 +Theo yêu cầu của chủ dự án, chưa chạy kiểm thử hoặc chạy thử ứng dụng trong đợt bổ sung này.
 +
@@ -156,7 +179,7 @@ H2 không thay thế kiểm thử tích hợp SQL Server thật. Trước nghi�
 
 ## Bổ sung ngày 25/10: duyệt mẫu, QR nhận bánh và lịch sản xuất
 
-- Database đã có dữ liệu: chạy `database/08-duyet-mau-va-lich-san-xuat.sql` sau file 07. Không chạy lại file 01 để nâng cấp. File 01 đã gồm file 08 cho cài mới.
+- Cài mới dùng `database/BONG_BAKERY_SQL_SERVER.sql` đã gộp đầy đủ cấu trúc. Database SPQR hiện tại đã được nâng cấp, không cần chạy lại. Các bản nâng cấp lịch sử nằm trong ZIP lưu trữ.
 - Eclipse: Maven → Update Project để tải thư viện ZXing; khởi động lại bằng Run As → Spring Boot App.
 - Thông tin dị ứng và bảo quản: quản trị → Bánh & tồn kho → Sửa; khách xem tại chi tiết bánh. Dữ liệu trống hiển thị lời nhắc xác nhận với cửa hàng.
 - Duyệt mẫu: báo giá bánh riêng → admin gửi ảnh mẫu → khách duyệt mẫu mới nhất và chốt báo giá → đủ tiền trả trước → bắt đầu làm. Đơn đang ACCEPTED từ trước cũng cần duyệt mẫu; đơn đã làm tiếp tục trạng thái hiện tại.

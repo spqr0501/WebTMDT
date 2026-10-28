@@ -81,4 +81,30 @@ public java.util.Set<OrderAccessory> getAccessories(){return accessories;} publi
 
 @Embedded private PaymentSummary payment=new PaymentSummary();
 public PaymentSummary getPayment(){return payment;}public void setPayment(PaymentSummary value){payment=value;}
+
+@Column(name="vi_do_giao") private Double deliveryLatitude;
+@Column(name="kinh_do_giao") private Double deliveryLongitude;
+@ManyToOne @JoinColumn(name="shipper_id") private User shipper;
+@Column(name="vi_do_shipper") private Double shipperLatitude;
+@Column(name="kinh_do_shipper") private Double shipperLongitude;
+@Column(name="do_chinh_xac_shipper") private Double locationAccuracy;
+@Column(name="vi_tri_cap_nhat_luc") private java.time.Instant locationUpdatedAt;
+@Column(name="gps_ghi_nhan_luc") private java.time.Instant locationCapturedAt;
+@Column(name="dang_chia_se_vi_tri",nullable=false) private boolean locationSharing=false;
+@Column(name="shipper_da_giao_luc") private java.time.Instant handedOverAt;
+@org.hibernate.annotations.Nationalized @Column(name="su_co_giao_hang",length=500) private String deliveryIssue;
+public Double getDeliveryLatitude(){return deliveryLatitude;}public void setDeliveryLatitude(Double v){deliveryLatitude=v;}
+public Double getDeliveryLongitude(){return deliveryLongitude;}public void setDeliveryLongitude(Double v){deliveryLongitude=v;}
+public User getShipper(){return shipper;}public void setShipper(User v){shipper=v;}
+public Double getShipperLatitude(){return shipperLatitude;}public void setShipperLatitude(Double v){shipperLatitude=v;}
+public Double getShipperLongitude(){return shipperLongitude;}public void setShipperLongitude(Double v){shipperLongitude=v;}
+public Double getLocationAccuracy(){return locationAccuracy;}public void setLocationAccuracy(Double v){locationAccuracy=v;}
+public java.time.Instant getLocationUpdatedAt(){return locationUpdatedAt;}public void setLocationUpdatedAt(java.time.Instant v){locationUpdatedAt=v;}
+public java.time.Instant getLocationCapturedAt(){return locationCapturedAt;}public void setLocationCapturedAt(java.time.Instant v){locationCapturedAt=v;}
+public boolean getLocationSharing(){return locationSharing;}public void setLocationSharing(boolean v){locationSharing=v;}
+public java.time.Instant getHandedOverAt(){return handedOverAt;}public void setHandedOverAt(java.time.Instant v){handedOverAt=v;}
+public String getDeliveryIssue(){return deliveryIssue;}public void setDeliveryIssue(String v){deliveryIssue=v;}
+
+@Column(name="phien_chia_se_vi_tri",length=36) private String trackingKey;
+public String getTrackingKey(){return trackingKey;}public void setTrackingKey(String v){trackingKey=v;}
 }

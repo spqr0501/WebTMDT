@@ -1,5 +1,7 @@
 # Thông báo, phụ kiện và đặt bánh Bóng Bakery
 
+> Cập nhật 28/10/2026: `database/` chỉ dùng một file chính thức `BONG_BAKERY_SQL_SERVER.sql` cho cài mới. Các file nâng cấp riêng được giữ trong `database/LUU_TRU_SQL_CU_2026-10-28.zip`; các số file bên dưới là lịch sử. Database SPQR đã nâng cấp không cần chạy lại.
+
 ## Khởi động sau khi cập nhật
 
 Trên máy SPQR, file `database/05-thong-bao-combo-va-banh-rieng.sql` đã được áp dụng để bổ sung cấu trúc. Trong Eclipse, Refresh dự án rồi khởi động lại Spring Boot App. Không cần chạy lại file 01 trên database đang dùng.

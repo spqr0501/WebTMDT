@@ -36,3 +36,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Cau hinh Stripe cuc bo va cong cu webhook
+.local/

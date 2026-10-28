@@ -1,1 +1,1 @@
-package com.example.demo.entity; public enum Role { USER, ADMIN }
+package com.example.demo.entity; public enum Role { USER, ADMIN, SHIPPER }

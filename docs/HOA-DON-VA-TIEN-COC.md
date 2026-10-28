@@ -1,5 +1,7 @@
 # Hóa đơn và cọc 50% tại Bóng Bakery
 
+> Cập nhật 28/10/2026: `database/` chỉ dùng một file chính thức `BONG_BAKERY_SQL_SERVER.sql` cho cài mới. Các file nâng cấp riêng được giữ trong `database/LUU_TRU_SQL_CU_2026-10-28.zip`; các số file bên dưới là lịch sử. Database SPQR đã nâng cấp không cần chạy lại.
+
 ## Cập nhật dự án
 
 File `database/07-thanh-toan-coc-va-hoa-don.sql` đã được áp dụng trên database `cake_shop` của SPQR. Máy khác nâng cấp bằng file 07 sau các phần trước. Cài mới dùng file 01 đã bao gồm phần bổ sung.

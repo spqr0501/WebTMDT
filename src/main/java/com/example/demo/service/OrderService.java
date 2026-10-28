@@ -9,6 +9,8 @@ import java.util.*;
 import java.math.BigDecimal;
 @Service
 public class OrderService {
+ @org.springframework.beans.factory.annotation.Autowired private com.example.demo.config.StripeSettings stripeSettings;
+ @org.springframework.beans.factory.annotation.Autowired private jakarta.validation.Validator validator;
  private final AccessoryService accessories;private final NotificationService notices;
  @org.springframework.beans.factory.annotation.Value("${app.shop.address:}") private String shopAddress;
  private final OptionService options;private final StockService stock;private final UserRepository users;private final AddressRepository addresses;private final ProductRepository products;private final CustomerOrderRepository orders;private final VoucherRepository vouchers;private final VoucherUsageRepository usages;private final VoucherService voucherService;private final AccountService accounts;
@@ -23,14 +25,16 @@ public class OrderService {
   var prior=orders.findByCheckoutTokenAndUserId(form.getToken(),user.getId());if(prior.isPresent())return prior.get();
   if(cart.isEmpty())throw new BusinessException("Giỏ hàng đang trống.");
   if(cart.size()>50)throw new BusinessException("Giỏ hàng tối đa 50 sản phẩm.");
-  validateDelivery(form);
+  validateDelivery(form);if(form.getPaymentMethod()==PaymentMethod.STRIPE&&!stripeSettings.ready())throw new BusinessException("Stripe Sandbox chưa sẵn sàng. Vui lòng chọn phương thức khác hoặc cấu hình khóa/webhook.");
   Address address=null;
   if(form.getFulfillmentMethod()==null)throw new BusinessException("Chọn hình thức nhận bánh.");
-  if(form.getFulfillmentMethod()==FulfillmentMethod.DELIVERY){if(form.getAddressId()==null)throw new BusinessException("Chọn địa chỉ giao hàng.");address=addresses.findByIdAndUserId(form.getAddressId(),user.getId()).orElseThrow(()->new BusinessException("Địa chỉ giao hàng không hợp lệ."));}
+  if(form.getFulfillmentMethod()==FulfillmentMethod.DELIVERY){if(form.getUseNewAddress()){
+   var f=form.getNewAddress();if(f==null||!validator.validate(f).isEmpty())throw new BusinessException("Kiểm tra người nhận, số điện thoại và địa chỉ mới (tối đa 500 ký tự).");GeoService.validate(f.getLatitude(),f.getLongitude());address=new Address();address.setRecipient(f.getRecipient().strip());address.setPhone(f.getPhone().strip());address.setDetail(f.getDetail().strip());address.setLatitude(f.getLatitude());address.setLongitude(f.getLongitude());
+  }else{if(form.getAddressId()==null)throw new BusinessException("Chọn địa chỉ giao hàng hoặc nhập địa chỉ mới.");address=addresses.findByIdAndUserId(form.getAddressId(),user.getId()).orElseThrow(()->new BusinessException("Địa chỉ giao hàng không hợp lệ."));}}
   else if(form.getPickupRecipient()==null||form.getPickupRecipient().isBlank()||form.getPickupRecipient().length()>100||form.getPickupPhone()==null||!form.getPickupPhone().matches("[0-9+() .-]{8,20}"))throw new BusinessException("Nhập họ tên và số điện thoại người đến nhận bánh.");
   CustomerOrder order=new CustomerOrder();order.setUser(user);order.setCheckoutToken(form.getToken());order.setFulfillmentMethod(form.getFulfillmentMethod());order.setPreorder(form.getPreorder());
-  if(address!=null){order.setRecipient(address.getRecipient());order.setPhone(address.getPhone());order.setDeliveryAddress(address.getDetail());}
-  else{order.setRecipient(form.getPickupRecipient().strip());order.setPhone(form.getPickupPhone().strip());order.setDeliveryAddress(shopAddress==null||shopAddress.isBlank()?"Bóng Bakery — cửa hàng sẽ xác nhận địa chỉ nhận bánh":shopAddress);}order.setPaymentMethod(form.getFulfillmentMethod()==FulfillmentMethod.PICKUP?PaymentMethod.BANK_TRANSFER:form.getPaymentMethod());order.setNote(form.getNote());order.setDeliveryDate(form.getDeliveryDate());order.setDeliverySlot(form.getDeliverySlot());order.setCakeMessage(form.getCakeMessage());
+  if(address!=null){order.setRecipient(address.getRecipient());order.setPhone(address.getPhone());order.setDeliveryAddress(address.getDetail());order.setDeliveryLatitude(address.getLatitude());order.setDeliveryLongitude(address.getLongitude());}
+  else{order.setRecipient(form.getPickupRecipient().strip());order.setPhone(form.getPickupPhone().strip());order.setDeliveryAddress(shopAddress==null||shopAddress.isBlank()?"Bóng Bakery — cửa hàng sẽ xác nhận địa chỉ nhận bánh":shopAddress);}order.setPaymentMethod(form.getFulfillmentMethod()==FulfillmentMethod.PICKUP&&form.getPaymentMethod()!=PaymentMethod.STRIPE?PaymentMethod.BANK_TRANSFER:form.getPaymentMethod());order.setNote(form.getNote());order.setDeliveryDate(form.getDeliveryDate());order.setDeliverySlot(form.getDeliverySlot());order.setCakeMessage(form.getCakeMessage());
   BigDecimal subtotal=BigDecimal.ZERO;
   for(var entry:new TreeMap<>(cart).entrySet()){
    Product p=products.lockById(entry.getKey().productId()).orElseThrow(()->new BusinessException("Sản phẩm không còn tồn tại."));int qty=entry.getValue();
@@ -75,6 +79,8 @@ public class OrderService {
    accessories.restore(o);
    // Voucher uses intentionally remain consumed after cancellation; see design specification.
   }
+  if(next==OrderStatus.SHIPPING&&(o.getShipper()==null||!o.getShipper().getEnabled()||o.getShipper().getRole()!=Role.SHIPPER))throw new BusinessException("Hãy phân công shipper đang hoạt động trước khi chuyển sang đang giao.");
+  if(next==OrderStatus.CANCELLED||next==OrderStatus.COMPLETED)DeliveryService.clearLocation(o);
   o.setStatus(next);
   if(next==OrderStatus.COMPLETED)o.setCompletedAt(java.time.LocalDateTime.now());
   String message=switch(next){case CONFIRMED->"Cửa hàng đã xác nhận đơn và lịch nhận bánh.";case PREPARING->"Bóng Bakery đang chuẩn bị bánh cho bạn.";case SHIPPING->"Bánh đang được giao đến địa chỉ của bạn. Vui lòng chú ý điện thoại.";case READY_FOR_PICKUP->"Bánh đã sẵn sàng. Bạn có thể đến nhận theo lịch tại: "+o.getDeliveryAddress();case COMPLETED->"Đơn bánh đã hoàn thành. Bạn có thể vào chi tiết bánh để gửi đánh giá.";case CANCELLED->"Đơn đã hủy. Tồn kho đã hoàn lại; lượt mã giảm giá không được hoàn. Nếu đã chuyển tiền, khoản hoàn cần cửa hàng đối soát và xử lý riêng.";default->"Trạng thái đơn: "+next.getLabel();};

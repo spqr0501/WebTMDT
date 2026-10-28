@@ -5,6 +5,7 @@
  <groupId>com.example</groupId><artifactId>WebTMDT</artifactId><version>1.0.0</version><name>Bóng Bakery</name>
  <properties><java.version>17</java.version><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding></properties>
  <dependencies>
+<dependency><groupId>com.stripe</groupId><artifactId>stripe-java</artifactId><version>34.0.0</version></dependency>
 <dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId><version>6.0.0</version></dependency>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-mail</artifactId></dependency>
 <dependency><groupId>com.google.zxing</groupId><artifactId>javase</artifactId><version>3.5.3</version></dependency>

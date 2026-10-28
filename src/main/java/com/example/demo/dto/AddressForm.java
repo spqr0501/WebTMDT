@@ -11,4 +11,10 @@ public class AddressForm {
 public String getRecipient() {return recipient;} public void setRecipient(String v) {recipient=v;}
 public String getPhone() {return phone;} public void setPhone(String v) {phone=v;}
 public String getDetail() {return detail;} public void setDetail(String v) {detail=v;}
+
+@DecimalMin("-90") @DecimalMax("90") private Double latitude;
+@DecimalMin("-180") @DecimalMax("180") private Double longitude;
+public Double getLatitude(){return latitude;}public void setLatitude(Double v){latitude=v;}
+public Double getLongitude(){return longitude;}public void setLongitude(Double v){longitude=v;}
+
 }

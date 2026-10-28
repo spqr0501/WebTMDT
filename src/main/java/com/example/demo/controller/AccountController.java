@@ -19,6 +19,4 @@ public class AccountController {
   try{accounts.register(form);}catch(BusinessException e){errors.reject("registration",e.getMessage());return "auth/register";}
   return "redirect:/login?registered";
  }
- @GetMapping("/account/addresses") public String addresses(Principal p,Model m){m.addAttribute("addresses",accounts.addresses(p.getName()));m.addAttribute("form",new AddressForm());return "account/addresses";}
- @PostMapping("/account/addresses") public String address(Principal p,@Valid @ModelAttribute("form") AddressForm f,BindingResult errors,Model m){if(errors.hasErrors()){m.addAttribute("addresses",accounts.addresses(p.getName()));return "account/addresses";}accounts.addAddress(p.getName(),f);return "redirect:/checkout";}
 }

@@ -38,4 +38,10 @@ public java.util.Map<Long,Integer> getAccessories(){return accessories;} public 
 
 @NotNull private PaymentPlan paymentPlan=PaymentPlan.DEPOSIT;
 public PaymentPlan getPaymentPlan(){return paymentPlan;}public void setPaymentPlan(PaymentPlan value){paymentPlan=value;}
+
+private boolean useNewAddress;
+private AddressForm newAddress=new AddressForm();
+public boolean getUseNewAddress(){return useNewAddress;}public void setUseNewAddress(boolean v){useNewAddress=v;}
+public AddressForm getNewAddress(){return newAddress;}public void setNewAddress(AddressForm v){newAddress=v;}
+
 }

@@ -21,4 +21,10 @@ public void setPhone(String value) { this.phone=value; }
 public String getDetail() { return detail; }
 public void setDetail(String value) { this.detail=value; }
 
+
+@Column(name="vi_do") private Double latitude;
+@Column(name="kinh_do") private Double longitude;
+public Double getLatitude(){return latitude;}public void setLatitude(Double v){latitude=v;}
+public Double getLongitude(){return longitude;}public void setLongitude(Double v){longitude=v;}
+
 }

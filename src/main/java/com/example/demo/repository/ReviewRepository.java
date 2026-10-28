@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.domain.*;
 import java.util.*;
 public interface ReviewRepository extends JpaRepository<Review,Long> {
+ @EntityGraph(attributePaths={"product"}) Page<Review> findByUserIdOrderByCreatedAtDescIdDesc(Long userId,Pageable pageable);
+ long countByUserId(Long userId);
  boolean existsByProductIdAndUserId(Long productId,Long userId);
  @Query("select r from Review r where r.product.id=:id and r.visible=true and (:rating is null or r.rating=:rating) order by r.createdAt desc")
  Page<Review> published(Long id,Integer rating,Pageable pageable);

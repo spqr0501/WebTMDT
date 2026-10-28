@@ -2,6 +2,10 @@
 
 Máy chủ của bạn: **SPQR**, cổng **1433**, cơ sở dữ liệu **cake_shop**, đăng nhập **Windows Authentication**. Ứng dụng sử dụng tài khoản Windows đang chạy Eclipse; không cần nhập mật khẩu SQL Server.
 
+## Khởi tạo database khi cài mới
+
+Mở `database/BONG_BAKERY_SQL_SERVER.sql` bằng SSMS và chạy toàn bộ. Đây là file tổng chính thức, không cần chạy thêm các file nâng cấp riêng. Máy SPQR đang có đầy đủ dữ liệu thì bỏ qua bước này. Xem thêm [hướng dẫn database](../database/README.md).
+
 ## Chạy trong Eclipse
 
 1. Chọn dự án **WebTMDT**, nhấn **F5** để cập nhật các file vừa sửa.

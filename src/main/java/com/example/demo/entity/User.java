@@ -26,4 +26,12 @@ public void setRole(Role value) { this.role=value; }
 public boolean getEnabled() { return enabled; }
 public void setEnabled(boolean value) { this.enabled=value; }
 
+
+@Column(name="dien_thoai_shipper",length=20) private String shipperPhone;
+@org.hibernate.annotations.Nationalized @Column(name="phuong_tien_shipper",length=100) private String shipperVehicle;
+public String getShipperPhone(){return shipperPhone;}public void setShipperPhone(String v){shipperPhone=v;}
+public String getShipperVehicle(){return shipperVehicle;}public void setShipperVehicle(String v){shipperVehicle=v;}
+
+@Column(name="so_dien_thoai",length=20) private String phone;
+public String getPhone(){return phone;}public void setPhone(String v){phone=v;}
 }

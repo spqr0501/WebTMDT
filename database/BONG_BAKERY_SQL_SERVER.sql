@@ -1,11 +1,19 @@
 ﻿/*
-TẠO CƠ SỞ DỮ LIỆU TIỆM BÁNH - MICROSOFT SQL SERVER 2012 TRỞ LÊN
+BÓNG BAKERY — FILE SQL SERVER TỔNG CHÍNH THỨC
+Phiên bản hợp nhất: 28/10/2026. Dùng để khởi tạo cơ sở dữ liệu mới.
 Cách chạy: mở file này trong SQL Server Management Studio, chọn toàn bộ rồi F5.
 Tài khoản chạy cần quyền tạo cơ sở dữ liệu và tạo bảng.
-File gồm 8 bảng, khóa chính/ngoại, ràng buộc, chỉ mục và dữ liệu mẫu.
+Bao gồm toàn bộ 25 bảng, khóa chính/ngoại, ràng buộc, chỉ mục và dữ liệu mẫu.
+Tích hợp các phần nâng cấp: đánh giá, kho, thông báo, combo, bánh riêng,
+thanh toán cọc, duyệt mẫu, đổi trả, hỗ trợ, yêu thích, quên mật khẩu và ảnh,
+bản đồ chọn địa chỉ, shipper và chia sẻ vị trí giao hàng.
+Dữ liệu cuối cùng: 13 danh mục, 39 bánh có ảnh Internet và mô tả tiếng Việt.
+Không có bánh trung thu. Ảnh nằm tại src/main/resources/static/images/banh/.
 Tên bảng/cột dùng tiếng Việt không dấu; nội dung dùng Unicode có dấu.
-Không xóa dữ liệu. Nếu đã có một trong các bảng, file dừng để tránh ghi đè.
-Không chạy các file 01-schema.sql / 02-seed.sql của MySQL trong SQL Server.
+Không dùng file khởi tạo này để nâng cấp database đang có bảng hoặc dữ liệu.
+Chỉ chạy file này cho cài mới, không cần chạy các file SQL riêng lẻ.
+Database đang chạy trên SPQR đã có dữ liệu: không cần chạy lại file này.
+Các file lịch sử (có cả MySQL cũ) nằm trong LUU_TRU_SQL_CU_2026-10-28.zip.
 Các mã USER, ADMIN, PENDING... giữ nguyên để tương ứng với mã nguồn Java.
 */
 USE [master];
@@ -155,7 +163,7 @@ VALUES
 -- sau khi ứng dụng Spring Boot đã được cấu hình kết nối SQL Server.
 
     COMMIT TRANSACTION;
-    PRINT N'Đã tạo thành công 8 bảng, 3 danh mục, 6 bánh và 2 mã giảm giá.';
+    PRINT N'Đã tạo cấu trúc nền. Tiếp tục thực hiện các phần tích hợp bên dưới.';
 END TRY
 BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
@@ -174,7 +182,7 @@ GO
 
 
 -- PHẦN BỔ SUNG: BỘ ẢNH, ĐÁNH GIÁ, LỊCH GIAO VÀ TỒN KHO
--- Chạy sau 01-tao-day-du-sql-server.sql trong SQL Server Management Studio.
+-- Phần tích hợp 04: thực thi ngay sau cấu trúc nền ở trên.
 -- Chỉ bổ sung cấu trúc; có thể chạy lại, không xóa dữ liệu hiện có.
 USE cake_shop;
 GO
@@ -258,7 +266,7 @@ GO
 
 
 -- NÂNG CẤP THƯƠNG MẠI ĐIỆN TỬ
--- Nâng cấp dữ liệu hiện có, chạy sau file 04. Không xóa đơn hàng hoặc tài khoản.
+-- Phần tích hợp 05: thông báo, phụ kiện và bánh thiết kế riêng.
 USE cake_shop;
 GO
 SET XACT_ABORT ON;
@@ -436,7 +444,7 @@ END CATCH;
 GO
 
 -- BỔ SUNG 08: DUYỆT MẪU VÀ LỊCH SẢN XUẤT
--- Chạy sau file 07. Bổ sung dữ liệu, không xóa hay đổi trạng thái đơn cũ.
+-- Phần tích hợp 08: duyệt mẫu bánh và lịch sản xuất.
 USE cake_shop;
 GO
 SET XACT_ABORT ON;
@@ -478,7 +486,7 @@ END CATCH;
 GO
 
 -- BỔ SUNG 09: ĐỔI TRẢ VÀ HỖ TRỢ HỘI THOẠI
--- Chạy sau 08 trên database đang dùng. Không xóa đơn hoặc tự tạo khoản thu/hoàn.
+-- Phần tích hợp 09: đổi trả, hoàn tiền và phiếu hỗ trợ.
 USE cake_shop;
 GO
 SET ANSI_NULLS ON;
@@ -562,7 +570,7 @@ END CATCH;
 GO
 
 -- BỔ SUNG 10: YÊU THÍCH VÀ QUÊN MẬT KHẨU
--- Nâng cấp sau file 09, không xóa dữ liệu người dùng.
+-- Phần tích hợp 10: yêu thích và khôi phục mật khẩu.
 USE cake_shop;
 GO
 SET XACT_ABORT ON;
@@ -603,7 +611,7 @@ END CATCH;
 GO
 
 -- BỔ SUNG 11: MỖI DANH MỤC BA BÁNH
--- Chạy sau 10. Chỉ bổ sung để mỗi danh mục mẫu có ít nhất 3 bánh đang bán.
+-- Phần tích hợp 11: hoàn thiện mỗi danh mục mẫu có 3 bánh đang bán.
 -- Không tạo bánh trung thu; không sửa giá, ảnh, tồn kho hoặc xóa bánh hiện có.
 USE cake_shop;
 GO
@@ -677,8 +685,8 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- BO SUNG 12: ANH VA MO TA BANH
--- Chạy sau 11. Ảnh Internet có nguồn tại /image-credits; không dùng ảnh AI.
+-- PHẦN TÍCH HỢP 12: ẢNH VÀ MÔ TẢ BÁNH
+-- Ảnh Internet có nguồn tại /image-credits; không dùng ảnh AI.
 -- Chỉ cập nhật 39 bánh mẫu đang dùng SVG hoặc bộ ảnh mẫu này. Giữ nguyên ảnh admin upload, giá, tồn kho và thông tin dị ứng.
 USE cake_shop;
 GO
@@ -736,4 +744,117 @@ BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
  THROW;
 END CATCH;
+GO
+
+
+-- PHẦN TÍCH HỢP 13: BẢN ĐỒ, ĐỊA CHỈ GPS VÀ SHIPPER
+USE [cake_shop];
+GO
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF COL_LENGTH('dbo.dia_chi','vi_do') IS NULL ALTER TABLE dbo.dia_chi ADD vi_do FLOAT NULL;
+ IF COL_LENGTH('dbo.dia_chi','kinh_do') IS NULL ALTER TABLE dbo.dia_chi ADD kinh_do FLOAT NULL;
+ IF COL_LENGTH('dbo.nguoi_dung','dien_thoai_shipper') IS NULL ALTER TABLE dbo.nguoi_dung ADD dien_thoai_shipper VARCHAR(20) NULL;
+ IF COL_LENGTH('dbo.nguoi_dung','phuong_tien_shipper') IS NULL ALTER TABLE dbo.nguoi_dung ADD phuong_tien_shipper NVARCHAR(100) NULL;
+ IF COL_LENGTH('dbo.don_hang','vi_do_giao') IS NULL ALTER TABLE dbo.don_hang ADD vi_do_giao FLOAT NULL;
+ IF COL_LENGTH('dbo.don_hang','kinh_do_giao') IS NULL ALTER TABLE dbo.don_hang ADD kinh_do_giao FLOAT NULL;
+ IF COL_LENGTH('dbo.don_hang','shipper_id') IS NULL ALTER TABLE dbo.don_hang ADD shipper_id BIGINT NULL;
+ IF COL_LENGTH('dbo.don_hang','vi_do_shipper') IS NULL ALTER TABLE dbo.don_hang ADD vi_do_shipper FLOAT NULL;
+ IF COL_LENGTH('dbo.don_hang','kinh_do_shipper') IS NULL ALTER TABLE dbo.don_hang ADD kinh_do_shipper FLOAT NULL;
+ IF COL_LENGTH('dbo.don_hang','do_chinh_xac_shipper') IS NULL ALTER TABLE dbo.don_hang ADD do_chinh_xac_shipper FLOAT NULL;
+ IF COL_LENGTH('dbo.don_hang','vi_tri_cap_nhat_luc') IS NULL ALTER TABLE dbo.don_hang ADD vi_tri_cap_nhat_luc DATETIMEOFFSET(6) NULL;
+ IF COL_LENGTH('dbo.don_hang','gps_ghi_nhan_luc') IS NULL ALTER TABLE dbo.don_hang ADD gps_ghi_nhan_luc DATETIMEOFFSET(6) NULL;
+ IF COL_LENGTH('dbo.don_hang','dang_chia_se_vi_tri') IS NULL ALTER TABLE dbo.don_hang ADD dang_chia_se_vi_tri BIT NOT NULL CONSTRAINT df_don_hang_chia_se_vi_tri DEFAULT 0 WITH VALUES;
+ IF COL_LENGTH('dbo.don_hang','shipper_da_giao_luc') IS NULL ALTER TABLE dbo.don_hang ADD shipper_da_giao_luc DATETIMEOFFSET(6) NULL;
+ IF COL_LENGTH('dbo.don_hang','su_co_giao_hang') IS NULL ALTER TABLE dbo.don_hang ADD su_co_giao_hang NVARCHAR(500) NULL;
+ IF COL_LENGTH('dbo.don_hang','phien_chia_se_vi_tri') IS NULL ALTER TABLE dbo.don_hang ADD phien_chia_se_vi_tri VARCHAR(36) NULL;
+ IF EXISTS(SELECT 1 FROM sys.check_constraints WHERE name='ck_nguoi_dung_vai_tro' AND parent_object_id=OBJECT_ID('dbo.nguoi_dung')) ALTER TABLE dbo.nguoi_dung DROP CONSTRAINT ck_nguoi_dung_vai_tro;
+ ALTER TABLE dbo.nguoi_dung WITH CHECK ADD CONSTRAINT ck_nguoi_dung_vai_tro CHECK(vai_tro IN ('USER','ADMIN','SHIPPER'));
+ IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name='fk_don_hang_shipper') ALTER TABLE dbo.don_hang ADD CONSTRAINT fk_don_hang_shipper FOREIGN KEY(shipper_id) REFERENCES dbo.nguoi_dung(id);
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE name='ix_don_hang_shipper' AND object_id=OBJECT_ID('dbo.don_hang')) CREATE INDEX ix_don_hang_shipper ON dbo.don_hang(shipper_id,trang_thai,ngay_giao);
+GO
+PRINT N'Đã bổ sung bản đồ và shipper. Không tạo tài khoản hoặc vị trí GPS giả.';
+GO
+
+
+
+-- PHẦN TÍCH HỢP 14: THÔNG TIN LIÊN HỆ TRANG CÁ NHÂN
+USE [cake_shop];
+GO
+IF COL_LENGTH('dbo.nguoi_dung','so_dien_thoai') IS NULL
+ ALTER TABLE dbo.nguoi_dung ADD so_dien_thoai VARCHAR(20) NULL;
+GO
+PRINT N'Đã bổ sung số điện thoại cá nhân. Không thay đổi địa chỉ hoặc đơn đã đặt.';
+GO
+
+
+-- PHẦN TÍCH HỢP 15: STRIPE SANDBOX VÀ ĐỐI SOÁT THANH TOÁN
+-- Không lưu khóa Stripe trong SQL. Không tự chuyển phương thức hoặc ghi nhận tiền cho đơn cũ.
+USE [cake_shop];
+GO
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF EXISTS(SELECT 1 FROM sys.check_constraints WHERE name='ck_don_hang_thanh_toan' AND parent_object_id=OBJECT_ID('dbo.don_hang'))
+  ALTER TABLE dbo.don_hang DROP CONSTRAINT ck_don_hang_thanh_toan;
+ ALTER TABLE dbo.don_hang WITH CHECK ADD CONSTRAINT ck_don_hang_thanh_toan CHECK(phuong_thuc_thanh_toan IN ('COD','BANK_TRANSFER','STRIPE'));
+ DECLARE @stripe_drop NVARCHAR(MAX)=N'';
+ SELECT @stripe_drop=@stripe_drop+N'ALTER TABLE dbo.yeu_cau_banh_rieng DROP CONSTRAINT '+QUOTENAME(name)+N';'
+ FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('dbo.yeu_cau_banh_rieng')
+ AND (parent_column_id=COLUMNPROPERTY(OBJECT_ID('dbo.yeu_cau_banh_rieng'),'phuong_thuc_thanh_toan','ColumnId') OR definition LIKE '%phuong_thuc_thanh_toan%');
+ IF LEN(@stripe_drop)>0 EXEC sys.sp_executesql @stripe_drop;
+ ALTER TABLE dbo.yeu_cau_banh_rieng WITH CHECK ADD CONSTRAINT ck_banh_rieng_thanh_toan_stripe CHECK(phuong_thuc_thanh_toan IN ('COD','BANK_TRANSFER','STRIPE'));
+ IF OBJECT_ID('dbo.giao_dich_stripe','U') IS NULL
+ BEGIN
+  CREATE TABLE dbo.giao_dich_stripe(
+   id VARCHAR(36) NOT NULL PRIMARY KEY,
+   nguoi_dung_id BIGINT NOT NULL REFERENCES dbo.nguoi_dung(id),
+   don_hang_id BIGINT NULL REFERENCES dbo.don_hang(id),
+   banh_rieng_id BIGINT NULL REFERENCES dbo.yeu_cau_banh_rieng(id),
+   so_tien DECIMAL(14,0) NOT NULL CHECK(so_tien>0),
+   trang_thai VARCHAR(20) NOT NULL DEFAULT 'CREATING' CHECK(trang_thai IN ('CREATING','OPEN','PAID','EXPIRED','REVIEW','RESOLVED')),
+   stripe_session_id VARCHAR(255) NULL,
+   stripe_payment_intent VARCHAR(255) NULL,
+   duong_dan_thanh_toan VARCHAR(2000) NULL,
+   ngay_tao DATETIMEOFFSET(6) NOT NULL,
+   het_han_luc DATETIMEOFFSET(6) NULL,
+   xac_nhan_luc DATETIMEOFFSET(6) NULL,
+   ghi_chu NVARCHAR(500) NULL,
+   ket_qua_doi_soat NVARCHAR(1000) NULL,
+   nguoi_doi_soat VARCHAR(190) NULL,
+   doi_soat_luc DATETIMEOFFSET(6) NULL,
+   CONSTRAINT ck_stripe_mot_don CHECK((don_hang_id IS NOT NULL AND banh_rieng_id IS NULL) OR (don_hang_id IS NULL AND banh_rieng_id IS NOT NULL))
+  );
+  CREATE UNIQUE INDEX ux_stripe_session ON dbo.giao_dich_stripe(stripe_session_id) WHERE stripe_session_id IS NOT NULL;
+  CREATE INDEX ix_stripe_don_ngay ON dbo.giao_dich_stripe(don_hang_id,ngay_tao DESC);
+  CREATE INDEX ix_stripe_banh_rieng_ngay ON dbo.giao_dich_stripe(banh_rieng_id,ngay_tao DESC);
+  CREATE INDEX ix_stripe_trang_thai ON dbo.giao_dich_stripe(trang_thai,ngay_tao DESC);
+ END;
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
+GO
+PRINT N'Đã bổ sung Stripe Sandbox; giữ nguyên dữ liệu và các khoản thu/hoàn hiện có.';
+GO
+
+PRINT N'Hoàn tất khởi tạo Bóng Bakery: 25 bảng, 13 danh mục và 39 bánh mẫu có ảnh.';
 GO

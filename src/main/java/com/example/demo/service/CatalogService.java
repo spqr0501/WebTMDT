@@ -29,6 +29,7 @@ public class CatalogService {
   return (r,c,b)->b.like(b.lower(r.get("name")),"%"+term+"%",'\\');
  }
  public Page<Product> search(String q,Long category,BigDecimal min,BigDecimal max,int page,String sort){
+  if(q!=null&&q.length()>100)throw new BusinessException("Từ khóa tối đa 100 ký tự.");
   if(min!=null&&max!=null&&min.compareTo(max)>0)throw new BusinessException("Giá tối thiểu không được lớn hơn giá tối đa.");
   Specification<Product> spec=(r,c,b)->b.isTrue(r.get("active"));
   if(q!=null&&!q.isBlank()){
@@ -38,6 +39,8 @@ public class CatalogService {
   if(min!=null)spec=spec.and((r,c,b)->b.greaterThanOrEqualTo(r.get("price"),min));
   if(max!=null)spec=spec.and((r,c,b)->b.lessThanOrEqualTo(r.get("price"),max));
   Sort order="priceAsc".equals(sort)?Sort.by("price").ascending():"priceDesc".equals(sort)?Sort.by("price").descending():Sort.by("id").descending();
-  return products.findAll(spec,PageRequest.of(Math.max(page,0),12,order));
+  if("priceAsc".equals(sort)||"priceDesc".equals(sort))order=order.and(Sort.by("id").ascending());var result=products.findAll(spec,PageRequest.of(Math.max(0,page),12,order));
+  if(result.getTotalPages()>0&&result.getNumber()>=result.getTotalPages())return products.findAll(spec,PageRequest.of(result.getTotalPages()-1,12,order));
+  return result;
  }
 }

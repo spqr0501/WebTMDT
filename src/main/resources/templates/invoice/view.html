@@ -6,7 +6,7 @@
 <main class="container main-content">
  <div class="invoice-toolbar"><a class="btn btn-outline-dark" th:href="@{${orderUrl}}">← Về chi tiết đơn</a><a class="btn btn-primary" th:href="@{${pdfUrl}}">Tải hóa đơn PDF</a></div>
  <article class="invoice-sheet">
-  <div class="invoice-brand"><div><strong>Bóng Bakery</strong><span>TIỆM BÁNH NGỌT</span></div><div class="invoice-seller"><p th:if="${!#strings.isEmpty(shopAddress)}" th:text="${shopAddress}"></p><p th:if="${!#strings.isEmpty(shopPhone)}" th:text="${shopPhone}"></p></div></div>
+  <div class="invoice-brand"><div><img th:src="@{/images/logo-bong-bakery.png}" alt="Bóng Bakery" width="120" height="99" style="object-fit:contain"></div><div class="invoice-seller"><p th:if="${!#strings.isEmpty(shopAddress)}" th:text="${shopAddress}"></p><p th:if="${!#strings.isEmpty(shopPhone)}" th:text="${shopPhone}"></p></div></div>
   <div class="invoice-title"><span class="eyebrow">CHỨNG TỪ ĐƠN HÀNG</span><h1 th:text="${invoice.title}"></h1><p th:text="${invoice.code+' · Ngày đặt '+#temporals.format(invoice.createdAt,'dd/MM/yyyy HH:mm')}"></p><span class="order-status" th:text="${invoice.status}"></span></div>
   <p class="alert alert-warning" th:if="${invoice.cancelled}">Đơn đã hủy / không thể đáp ứng. Không tiếp tục thanh toán. Số tiền cửa hàng đang giữ sẽ được đối soát để hoàn riêng.</p>
   <div class="invoice-customer"><section><h2>Khách hàng</h2><strong th:text="${invoice.buyer}"></strong><p th:text="${invoice.phone}"></p><p th:text="${invoice.address}"></p></section><section><h2>Giao / nhận bánh</h2><strong th:text="${invoice.fulfillment}"></strong><p th:text="${invoice.schedule}"></p><p th:text="${invoice.paymentPlan}"></p></section></div>

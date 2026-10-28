@@ -1,5 +1,7 @@
 # Các chức năng bổ sung
 
+> Cập nhật 28/10/2026: `database/` chỉ dùng một file chính thức `BONG_BAKERY_SQL_SERVER.sql` cho cài mới. Các file nâng cấp riêng được giữ trong `database/LUU_TRU_SQL_CU_2026-10-28.zip`; các số file bên dưới là lịch sử. Database SPQR đã nâng cấp không cần chạy lại.
+
 ## Báo cáo theo thời gian
 
 Trong admin, mở **Báo cáo theo thời gian** (`/admin/reports`). Chọn ngày bắt đầu/kết thúc (tối đa 366 ngày), ngày tạo hoặc ngày hoàn thành, và loại đơn. Nút xuất PDF dùng đúng bộ lọc đang chọn, có bảng ngày và chi tiết đơn.
@@ -30,4 +32,4 @@ Nhấn **Bộ sưu tập bánh** mở thẳng `/products`. Có 13 danh mục m�
 
 Đã cập nhật ảnh và mô tả 39 bánh mẫu trong SQL Server SPQR. Không thay giá, tồn, dị ứng, thành phần hay ảnh admin upload. Admin vẫn có thể thay ảnh thật bằng chức năng upload; khi thay, ghi nguồn của ảnh mẫu không còn xuất hiện dưới ảnh đó.
 
-Máy khác có database cũ: chạy lần lượt `10-yeu-thich-va-quen-mat-khau.sql`, `11-moi-danh-muc-ba-banh.sql`, `12-anh-va-mo-ta-banh.sql` sau các bản nâng cấp trước đó. Database mới dùng `01-tao-day-du-sql-server.sql` đã tích hợp các phần trên. Không chạy file tạo đầy đủ lên database đang có dữ liệu.
+Máy khác có database cũ: chạy lần lượt `10-yeu-thich-va-quen-mat-khau.sql`, `11-moi-danh-muc-ba-banh.sql`, `12-anh-va-mo-ta-banh.sql` sau các bản nâng cấp trước đó. Database mới dùng `BONG_BAKERY_SQL_SERVER.sql` đã tích hợp các phần trên. Không chạy file tạo đầy đủ lên database đang có dữ liệu.
