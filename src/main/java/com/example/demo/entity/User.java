@@ -5,6 +5,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name="nguoi_dung")
 public class User {
+@Enumerated(EnumType.STRING) @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.VARCHAR) @Column(name="hinh_thuc_nhan_gan_nhat",length=30) private FulfillmentMethod lastFulfillmentMethod;
+@Column(name="khung_gio_nhan_gan_nhat",length=20) private String lastDeliverySlot;
+public FulfillmentMethod getLastFulfillmentMethod(){return lastFulfillmentMethod;}public void setLastFulfillmentMethod(FulfillmentMethod v){lastFulfillmentMethod=v;}
+public String getLastDeliverySlot(){return lastDeliverySlot;}public void setLastDeliverySlot(String v){lastDeliverySlot=v;}
+
 @Column(name="phien_xac_thuc",nullable=false) private long authVersion=0;
 public long getAuthVersion(){return authVersion;}public void setAuthVersion(long v){authVersion=v;}
 @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;

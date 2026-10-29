@@ -15,7 +15,7 @@ public class VoucherService {
   return discount(vouchers.findByCode(normalize(code)).orElseThrow(()->new BusinessException("Mã giảm giá không tồn tại.")),userId,subtotal);
  }
  public BigDecimal discount(Voucher v,Long userId,BigDecimal subtotal){
-  LocalDateTime now=LocalDateTime.now();
+  LocalDateTime now=BakeryClock.now();
   if(!v.getActive())throw new BusinessException("Mã giảm giá đã ngừng áp dụng.");
   if(now.isBefore(v.getStartsAt())||!now.isBefore(v.getEndsAt()))throw new BusinessException("Mã chưa đến thời gian áp dụng hoặc đã hết hạn.");
   if(subtotal.compareTo(v.getMinOrder())<0)throw new BusinessException("Đơn hàng chưa đạt giá trị tối thiểu "+v.getMinOrder()+" đ.");

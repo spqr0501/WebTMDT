@@ -25,12 +25,12 @@
 <section th:fragment="orderPickup" class="panel card card-body mt-4" th:if="${order.fulfillmentMethod.name() == 'PICKUP' and order.status.name() != 'CANCELLED' and order.status.name() != 'COMPLETED'}">
  <h2 class="h5">Mã QR nhận bánh tại cửa hàng</h2><p>Đưa QR này cho nhân viên khi đến nhận. Vui lòng giữ riêng mã nhận bánh.</p>
  <img th:src="@{/orders/{id}/pickup.png(id=${order.id})}" alt="Mã QR nhận bánh" width="240" height="240" style="max-width:100%;object-fit:contain;align-self:flex-start">
- <details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details>
+ <a class="btn btn-outline-primary btn-sm mt-3 align-self-start" th:href="@{/orders/{id}/pickup.png(id=${order.id},download=true)}" download>Tải ảnh QR nhận bánh</a><details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details>
  <p class="small text-muted mt-3 mb-0">Nhân viên sẽ kiểm tra trạng thái bánh và thanh toán trước khi bàn giao. QR không phải mã thanh toán.</p>
 </section>
 <section th:fragment="customPickup" class="panel card card-body mt-4" th:if="${request.fulfillmentMethod.name() == 'PICKUP' and (request.status.name() == 'ACCEPTED' or request.status.name() == 'PREPARING' or request.status.name() == 'READY')}">
  <h2 class="h5">Mã QR nhận bánh riêng</h2><p>Đưa QR này cho nhân viên khi đến nhận bánh. Giữ riêng mã của bạn.</p>
  <img th:src="@{/custom-cakes/{id}/pickup.png(id=${request.id})}" alt="Mã QR nhận bánh riêng" width="240" height="240" style="max-width:100%;object-fit:contain;align-self:flex-start">
- <details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details><p class="small text-muted mt-3 mb-0">QR dùng để tra đơn. Chỉ bàn giao khi bánh sẵn sàng và đã thanh toán đủ.</p>
+ <a class="btn btn-outline-primary btn-sm mt-3 align-self-start" th:href="@{/custom-cakes/{id}/pickup.png(id=${request.id},download=true)}" download>Tải ảnh QR bánh riêng</a><details class="mt-2"><summary>Xem mã để sao chép</summary><code class="d-block mt-2" style="overflow-wrap:anywhere" th:text="${pickupCode}"></code></details><p class="small text-muted mt-3 mb-0">QR dùng để tra đơn. Chỉ bàn giao khi bánh sẵn sàng và đã thanh toán đủ.</p>
 </section>
 </body></html>

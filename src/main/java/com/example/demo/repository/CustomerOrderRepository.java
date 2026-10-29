@@ -3,7 +3,10 @@ import com.example.demo.entity.*;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.*;
-public interface CustomerOrderRepository extends JpaRepository<CustomerOrder,Long> { Page<CustomerOrder> findByShipperIdAndStatusInOrderByDeliveryDateAscIdAsc(Long shipperId,java.util.Collection<OrderStatus> statuses,Pageable page);
+public interface CustomerOrderRepository extends JpaRepository<CustomerOrder,Long> {
+ Page<CustomerOrder> findByStatusAndPaymentPaidGreaterThan(OrderStatus status,java.math.BigDecimal amount,Pageable page);
+ long countByStatusAndPaymentPaidGreaterThan(OrderStatus status,java.math.BigDecimal amount);
+ Page<CustomerOrder> findByShipperIdAndStatusInOrderByDeliveryDateAscIdAsc(Long shipperId,java.util.Collection<OrderStatus> statuses,Pageable page);
  boolean existsByShipperIdAndStatusIn(Long shipperId,java.util.Collection<OrderStatus> statuses);
  Page<CustomerOrder> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
  java.util.List<CustomerOrder> findByCompletedAtGreaterThanEqualAndCompletedAtLessThan(java.time.LocalDateTime from,java.time.LocalDateTime to);

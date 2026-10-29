@@ -1,20 +1,15 @@
-# Cơ sở dữ liệu chính thức — Bóng Bakery
+# SQL Server tổng chính thức — Bóng Bakery
 
-Chỉ có **một file SQL chính thức**: [BONG_BAKERY_SQL_SERVER.sql](BONG_BAKERY_SQL_SERVER.sql).
+Dùng duy nhất [BONG_BAKERY_SQL_SERVER.sql](BONG_BAKERY_SQL_SERVER.sql), chạy toàn bộ bằng F5 trong SSMS. File tạo 26 bảng, 13 danh mục, 39 bánh có ảnh, 5 tài khoản, 5 đơn mẫu, 2 yêu cầu bánh riêng và voucher.
 
-File dành cho **Microsoft SQL Server**, tạo database `cake_shop`, 25 bảng cùng các ràng buộc/chỉ mục và dữ liệu mẫu: **13 danh mục, mỗi danh mục 3 bánh**, tổng cộng 39 bánh có ảnh và mô tả tiếng Việt. Không có bánh trung thu. Đã tích hợp toàn bộ phần nâng cấp đến ảnh sản phẩm, yêu thích, quên mật khẩu và **phần 13: bản đồ địa chỉ, shipper, chia sẻ GPS** và **phần 14: số điện thoại cá nhân**, **phần 15: Stripe Sandbox**.
+- Máy chưa có database `cake_shop`: giữ `@XoaDuLieuCu=0`.
+- Muốn xóa dữ liệu cũ và tạo lại: **dừng Spring Boot**, đổi `DECLARE @XoaDuLieuCu BIT=0` ở đầu file thành `=1`, rồi chạy cả file. **Toàn bộ database cũ sẽ bị xóa**, không có bản sao lưu tự động. Ảnh trên ổ đĩa không bị xóa.
+- Nếu database đã tồn tại và giữ `=0`, file dừng, không nạp đè mẫu vào dữ liệu cũ.
+- Không chạy các phần riêng lẻ; không chạy file lịch sử trong `LUU_TRU_SQL_CU_2026-10-28.zip`.
+- Các phần 15/16/17 lần lượt gồm Stripe, tọa độ bánh riêng và bộ mẫu thực hành. SQL không chứa khóa API Stripe.
 
-## Cách dùng
+Tài khoản mẫu: `admin@gmail.com`, `khach1@gmail.com`, `khach2@gmail.com`, `shipper1@gmail.com`, `shipper2@gmail.com`. Mật khẩu chung **123456**, đã mã hóa BCrypt.
 
-1. Mở SQL Server Management Studio, kết nối máy chủ `SPQR` bằng Windows Authentication.
-2. Khi cài mới và chưa có bảng của website, mở `BONG_BAKERY_SQL_SERVER.sql`.
-3. Chọn toàn bộ nội dung và nhấn F5. Chạy cả file, không chỉ riêng đoạn đang bôi đen.
-4. Khởi động website bằng Spring Boot App trong Eclipse.
+Xem [tài khoản, voucher và các tình huống thực hành](../docs/DU-LIEU-MAU-VA-TINH-HUONG.md). Đã tạo lại bộ mẫu trên SPQR ngày 29/10/2026 và xác nhận website khởi động với kiểm tra cấu trúc SQL Server; đã kiểm thử các luồng HTTP trên bộ mẫu.
 
-File sử dụng `GO` của SSMS, không dán vào trình chạy SQL của MySQL. Ảnh nằm trong `src/main/resources/static/images/banh/`, nguồn tại `/image-credits`. SQL không tự tạo mật khẩu quản trị; tài khoản được quản lý bởi ứng dụng.
-
-**Database trên máy SPQR đang có dữ liệu và đã được nâng cấp: không cần chạy lại file tạo mới.** Lần hợp nhất trước không đổi dữ liệu. Phần 13 bản đồ/shipper, phần 14 trang cá nhân và phần 15 Stripe Sandbox hiện đã được áp dụng trên SPQR; không cần chạy lại. Máy khác có database cũ chỉ chạy các phần còn thiếu theo thứ tự (13, 14 rồi 15), sau những nâng cấp trước đó.
-
-## Các bản cũ
-
-`LUU_TRU_SQL_CU_2026-10-28.zip` giữ nguyên 12 file SQL trước khi hợp nhất, gồm các bản MySQL cũ và các phần nâng cấp SQL Server. Chỉ dùng để tra cứu lịch sử hoặc phục hồi hướng dẫn nâng cấp cụ thể, không chạy tất cả file trong ZIP. Các hướng dẫn cũ nhắc số file 04–12 là tên lịch sử trong ZIP; cài mới chỉ cần file chính thức ở trên.
+Phần 18 bổ sung dữ liệu đối soát hoàn thực tế. Phần 19 bổ sung giỏ tài khoản, địa chỉ mặc định và lựa chọn nhận gần nhất. Khách 1/2 có một bánh trong giỏ mẫu; Khách 1 được gợi ý nhận tại quầy 13:00–17:00, Khách 2 giao tận nơi cùng khung giờ.

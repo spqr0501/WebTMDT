@@ -1,36 +1,66 @@
-﻿/*
-BÓNG BAKERY — FILE SQL SERVER TỔNG CHÍNH THỨC
-Phiên bản hợp nhất: 28/10/2026. Dùng để khởi tạo cơ sở dữ liệu mới.
-Cách chạy: mở file này trong SQL Server Management Studio, chọn toàn bộ rồi F5.
-Tài khoản chạy cần quyền tạo cơ sở dữ liệu và tạo bảng.
-Bao gồm toàn bộ 25 bảng, khóa chính/ngoại, ràng buộc, chỉ mục và dữ liệu mẫu.
-Tích hợp các phần nâng cấp: đánh giá, kho, thông báo, combo, bánh riêng,
-thanh toán cọc, duyệt mẫu, đổi trả, hỗ trợ, yêu thích, quên mật khẩu và ảnh,
-bản đồ chọn địa chỉ, shipper và chia sẻ vị trí giao hàng.
-Dữ liệu cuối cùng: 13 danh mục, 39 bánh có ảnh Internet và mô tả tiếng Việt.
-Không có bánh trung thu. Ảnh nằm tại src/main/resources/static/images/banh/.
-Tên bảng/cột dùng tiếng Việt không dấu; nội dung dùng Unicode có dấu.
-Không dùng file khởi tạo này để nâng cấp database đang có bảng hoặc dữ liệu.
-Chỉ chạy file này cho cài mới, không cần chạy các file SQL riêng lẻ.
-Database đang chạy trên SPQR đã có dữ liệu: không cần chạy lại file này.
-Các file lịch sử (có cả MySQL cũ) nằm trong LUU_TRU_SQL_CU_2026-10-28.zip.
-Các mã USER, ADMIN, PENDING... giữ nguyên để tương ứng với mã nguồn Java.
+/* BÓNG BAKERY – SQL SERVER TỔNG, cập nhật 29/10/2026.
+CHẠY TOÀN BỘ FILE TRONG SSMS (F5). Dừng ứng dụng Spring Boot trước khi đặt lại database.
+Có sẵn 5 tài khoản, 5 tình huống đơn hàng, 2 bánh riêng, voucher và ảnh bánh.
+Mật khẩu mẫu của 5 tài khoản: 123456. Xem docs/DU-LIEU-MAU-VA-TINH-HUONG.md.
+
+TÙY CHỌN XÓA DỮ LIỆU CŨ:
+- @XoaDuLieuCu = 0: mặc định, nếu database cake_shop đã tồn tại thì dừng và giữ dữ liệu.
+- @XoaDuLieuCu = 1: XÓA TOÀN BỘ DATABASE cake_shop rồi tạo lại, mọi đơn/tài khoản cũ mất.
+Chỉ đổi thành 1 khi bạn muốn đặt lại dữ liệu đồ án. File này không tự sao lưu.
+Không chạy từng đoạn; không chạy file SQL lịch sử trong ZIP.
 */
 USE [master];
 GO
-IF DB_ID(N'cake_shop') IS NULL
+SET NOCOUNT ON;
+EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+DECLARE @XoaDuLieuCu BIT=0; -- ĐỔI 0 THÀNH 1 NẾU MUỐN XÓA TOÀN BỘ DỮ LIỆU CŨ.
+IF DB_ID(N'cake_shop') IS NOT NULL
 BEGIN
-    EXEC(N'CREATE DATABASE [cake_shop] COLLATE Vietnamese_100_CI_AS');
+ IF @XoaDuLieuCu<>1
+ BEGIN
+  PRINT N'Dừng: database cake_shop đã có. Dữ liệu giữ nguyên. Muốn tạo bộ mẫu mới, dừng website và đổi @XoaDuLieuCu=1 ở đầu file.';
+  THROW 50000,N'Chưa bật tùy chọn xóa dữ liệu cũ; không có thay đổi database.',1;
+ END;
+ BEGIN TRY
+  ALTER DATABASE [cake_shop] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+  DROP DATABASE [cake_shop];
+ END TRY
+ BEGIN CATCH
+  IF DB_ID(N'cake_shop') IS NOT NULL ALTER DATABASE [cake_shop] SET MULTI_USER WITH ROLLBACK IMMEDIATE;
+  THROW;
+ END CATCH;
+ PRINT N'Đã xóa database cake_shop cũ theo tùy chọn @XoaDuLieuCu=1.';
 END;
+EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=1;
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+USE [master];
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+BEGIN TRY
+ IF DB_ID(N'cake_shop') IS NULL EXEC(N'CREATE DATABASE [cake_shop] COLLATE Vietnamese_100_CI_AS');
+END TRY
+BEGIN CATCH
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW;
+END CATCH;
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 USE [cake_shop];
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 -- Kiểm tra đúng cơ sở dữ liệu trước khi tạo bất kỳ bảng nào.
 IF DB_NAME() <> N'cake_shop'
-    THROW 50001, N'Chưa chọn được cơ sở dữ liệu cake_shop. Kiểm tra quyền tạo cơ sở dữ liệu.', 1;
+BEGIN
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW 50001,N'Chưa chọn được cơ sở dữ liệu cake_shop. Kiểm tra quyền tạo cơ sở dữ liệu.',1;
+END;
 
 IF EXISTS (
     SELECT 1 FROM sys.tables
@@ -169,8 +199,9 @@ BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
     THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- GIẢI THÍCH CÁC GIÁ TRỊ KỸ THUẬT TRONG BẢNG:
 -- vai_tro: USER = Khách hàng; ADMIN = Quản trị viên.
 -- loai: PERCENT = Giảm phần trăm; FIXED = Giảm số tiền cố định.
@@ -185,7 +216,9 @@ GO
 -- Phần tích hợp 04: thực thi ngay sau cấu trúc nền ở trên.
 -- Chỉ bổ sung cấu trúc; có thể chạy lại, không xóa dữ liệu hiện có.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -260,15 +293,18 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
+
 GO
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- NÂNG CẤP THƯƠNG MẠI ĐIỆN TỬ
 -- Phần tích hợp 05: thông báo, phụ kiện và bánh thiết kế riêng.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -357,16 +393,19 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
+
 GO
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- BỔ SUNG DANH MỤC BÁNH
 -- Bổ sung danh mục, không thay đổi danh mục hoặc sản phẩm hiện có.
 -- Có thể chạy lại; chỉ thêm tên chưa tồn tại.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -393,15 +432,18 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
+
 GO
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- TIỀN CỌC, ĐỐI SOÁT VÀ HÓA ĐƠN
 -- Bổ sung đối soát thanh toán. Không tự ghi nhận tiền cho các đơn cũ.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -439,14 +481,18 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- BỔ SUNG 08: DUYỆT MẪU VÀ LỊCH SẢN XUẤT
 -- Phần tích hợp 08: duyệt mẫu bánh và lịch sản xuất.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -481,14 +527,18 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- BỔ SUNG 09: ĐỔI TRẢ VÀ HỖ TRỢ HỘI THOẠI
 -- Phần tích hợp 09: đổi trả, hoàn tiền và phiếu hỗ trợ.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_PADDING ON;
@@ -565,14 +615,18 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- BỔ SUNG 10: YÊU THÍCH VÀ QUÊN MẬT KHẨU
 -- Phần tích hợp 10: yêu thích và khôi phục mật khẩu.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -606,15 +660,19 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- BỔ SUNG 11: MỖI DANH MỤC BA BÁNH
 -- Phần tích hợp 11: hoàn thiện mỗi danh mục mẫu có 3 bánh đang bán.
 -- Không tạo bánh trung thu; không sửa giá, ảnh, tồn kho hoặc xóa bánh hiện có.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -681,15 +739,19 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
-GO
 
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- PHẦN TÍCH HỢP 12: ẢNH VÀ MÔ TẢ BÁNH
 -- Ảnh Internet có nguồn tại /image-credits; không dùng ảnh AI.
 -- Chỉ cập nhật 39 bánh mẫu đang dùng SVG hoặc bộ ảnh mẫu này. Giữ nguyên ảnh admin upload, giá, tồn kho và thông tin dị ứng.
 USE cake_shop;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -742,14 +804,17 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
+
 GO
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- PHẦN TÍCH HỢP 13: BẢN ĐỒ, ĐỊA CHỈ GPS VÀ SHIPPER
 USE [cake_shop];
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -776,30 +841,40 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE name='ix_don_hang_shipper' AND object_id=OBJECT_ID('dbo.don_hang')) CREATE INDEX ix_don_hang_shipper ON dbo.don_hang(shipper_id,trang_thai,ngay_giao);
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 PRINT N'Đã bổ sung bản đồ và shipper. Không tạo tài khoản hoặc vị trí GPS giả.';
+
 GO
-
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- PHẦN TÍCH HỢP 14: THÔNG TIN LIÊN HỆ TRANG CÁ NHÂN
 USE [cake_shop];
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 IF COL_LENGTH('dbo.nguoi_dung','so_dien_thoai') IS NULL
  ALTER TABLE dbo.nguoi_dung ADD so_dien_thoai VARCHAR(20) NULL;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 PRINT N'Đã bổ sung số điện thoại cá nhân. Không thay đổi địa chỉ hoặc đơn đã đặt.';
+
 GO
-
-
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 -- PHẦN TÍCH HỢP 15: STRIPE SANDBOX VÀ ĐỐI SOÁT THANH TOÁN
 -- Không lưu khóa Stripe trong SQL. Không tự chuyển phương thức hoặc ghi nhận tiền cho đơn cũ.
 USE [cake_shop];
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_PADDING ON;
@@ -807,7 +882,9 @@ SET ANSI_WARNINGS ON;
 SET ARITHABORT ON;
 SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
+
 GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
@@ -850,11 +927,231 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW;
+END CATCH;
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+PRINT N'Đã bổ sung Stripe Sandbox; giữ nguyên dữ liệu và các khoản thu/hoàn hiện có.';
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+-- 16. Tọa độ giao bánh thiết kế riêng (giữ nguyên các yêu cầu cũ).
+IF COL_LENGTH(N'dbo.yeu_cau_banh_rieng',N'vi_do') IS NULL
+ ALTER TABLE dbo.yeu_cau_banh_rieng ADD vi_do FLOAT NULL;
+IF COL_LENGTH(N'dbo.yeu_cau_banh_rieng',N'kinh_do') IS NULL
+ ALTER TABLE dbo.yeu_cau_banh_rieng ADD kinh_do FLOAT NULL;
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+-- 17. BỘ MẪU THỰC HÀNH: 5 tài khoản, 5 tình huống đơn hàng, bánh riêng và voucher.
+-- Mật khẩu chung cho dữ liệu mẫu: 123456 (BCrypt, chỉ dùng cho đồ án).
+-- Thời hạn và lịch mẫu tính theo thời điểm chạy, múi giờ Việt Nam.
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ DECLARE @Luc DATETIME2=CONVERT(DATETIME2,SYSDATETIMEOFFSET() AT TIME ZONE 'SE Asia Standard Time');
+ DECLARE @HomNay DATE=CONVERT(DATE,@Luc);
+ DECLARE @MatKhau VARCHAR(60)='$2a$10$0I8ihkEEV0R1cOY4zEtRleXIfj.z436xLAp8O6vw8lW7F1tSFq0PW';
+ INSERT dbo.nguoi_dung(ten,email,mat_khau,vai_tro,duoc_hoat_dong,so_dien_thoai,dien_thoai_shipper,phuong_tien_shipper) VALUES
+ (N'Quản trị Bóng Bakery','admin@gmail.com',@MatKhau,'ADMIN',1,'0902592231',NULL,NULL),
+ (N'Ngọc Anh – khách mẫu 1','khach1@gmail.com',@MatKhau,'USER',1,'0902592232',NULL,NULL),
+ (N'Minh Khang – khách mẫu 2','khach2@gmail.com',@MatKhau,'USER',1,'0902592233',NULL,NULL),
+ (N'Hoàng Nam – shipper mẫu 1','shipper1@gmail.com',@MatKhau,'SHIPPER',1,'0912345678','0912345678',N'Xe máy 59A1-123.45'),
+ (N'Thảo Vy – shipper mẫu 2','shipper2@gmail.com',@MatKhau,'SHIPPER',1,'0976543210','0976543210',N'Xe máy 59B1-678.90');
+ DECLARE @Khach1 BIGINT=(SELECT id FROM dbo.nguoi_dung WHERE email='khach1@gmail.com');
+ DECLARE @Khach2 BIGINT=(SELECT id FROM dbo.nguoi_dung WHERE email='khach2@gmail.com');
+ DECLARE @Shipper1 BIGINT=(SELECT id FROM dbo.nguoi_dung WHERE email='shipper1@gmail.com');
+ DECLARE @Admin BIGINT=(SELECT id FROM dbo.nguoi_dung WHERE email='admin@gmail.com');
+ INSERT dbo.dia_chi(nguoi_dung_id,nguoi_nhan,so_dien_thoai,dia_chi_chi_tiet,vi_do,kinh_do) VALUES
+ (@Khach1,N'Ngọc Anh','0902592232',N'12 Lê Lợi, phường Bến Thành, TP. Hồ Chí Minh (địa chỉ mẫu)',10.7732,106.7012),
+ (@Khach2,N'Minh Khang','0902592233',N'45 Nguyễn Huệ, phường Sài Gòn, TP. Hồ Chí Minh (địa chỉ mẫu)',10.7743,106.7037);
+ -- Năm mã đang dùng + một mã hết hạn để thử tình huống không hợp lệ.
+ INSERT dbo.ma_giam_gia(ma,loai,gia_tri_giam,gia_tri_don_toi_thieu,giam_toi_da,bat_dau_luc,ket_thuc_luc,gioi_han_luot_dung,gioi_han_moi_nguoi,so_luot_da_dung,dang_ap_dung) VALUES
+ ('BONG10','PERCENT',10,100000,50000,DATEADD(DAY,-1,@Luc),DATEADD(DAY,90,@Luc),100,1,0,1),
+ ('NGOT50K','FIXED',50000,300000,NULL,DATEADD(DAY,-1,@Luc),DATEADD(DAY,90,@Luc),100,2,0,1),
+ ('SINHNHAT15','PERCENT',15,500000,120000,DATEADD(DAY,-1,@Luc),DATEADD(DAY,90,@Luc),50,1,0,1),
+ ('BANH20K','FIXED',20000,150000,NULL,DATEADD(DAY,-1,@Luc),DATEADD(DAY,90,@Luc),100,3,0,1),
+ ('BANMOI30K','FIXED',30000,250000,NULL,DATEADD(DAY,-1,@Luc),DATEADD(DAY,90,@Luc),1,1,0,1),
+ ('HETHAN10','PERCENT',10,0,50000,DATEADD(DAY,-10,@Luc),DATEADD(DAY,-1,@Luc),100,1,0,1);
+ -- Nạp tồn phụ kiện; đơn nhận tại quầy bên dưới sẽ trừ đúng một nến và một thiệp.
+ UPDATE dbo.phu_kien SET ton_kho=30,dang_ban=1;
+ DECLARE @Mau TABLE(stt INT PRIMARY KEY,san_pham_id BIGINT,ten NVARCHAR(150),gia DECIMAL(14,0),tuy_chon_id BIGINT,tuy_chon NVARCHAR(150));
+ INSERT @Mau(stt,san_pham_id,ten,gia,tuy_chon_id,tuy_chon)
+ SELECT TOP(5) ROW_NUMBER() OVER(ORDER BY p.id),p.id,p.ten,p.gia+COALESCE(o.gia_them,0),COALESCE(o.id,0),
+ CASE WHEN o.id IS NULL THEN N'Tiêu chuẩn' ELSE o.kich_thuoc+N' · '+o.huong_vi END
+ FROM dbo.san_pham p OUTER APPLY(SELECT TOP(1) id,kich_thuoc,huong_vi,gia_them FROM dbo.tuy_chon_banh WHERE san_pham_id=p.id AND dang_ban=1 ORDER BY id) o
+ WHERE p.dang_ap_dung=1 AND p.ton_kho>=5 ORDER BY p.id;
+ IF (SELECT COUNT(*) FROM @Mau)<>5 THROW 50020,N'Không đủ 5 bánh còn hàng để tạo bộ mẫu.',1;
+ DECLARE @i INT=1,@BanGiao DATETIME2=DATEADD(HOUR,-2,@Luc);
+ WHILE @i<=5
+ BEGIN
+  DECLARE @Pid BIGINT,@Ten NVARCHAR(150),@Gia DECIMAL(14,0),@Option BIGINT,@Nhan NVARCHAR(150);
+  SELECT @Pid=san_pham_id,@Ten=ten,@Gia=gia,@Option=tuy_chon_id,@Nhan=tuy_chon FROM @Mau WHERE stt=@i;
+  DECLARE @Qty INT=CASE WHEN @i=1 THEN 2 ELSE 1 END;
+  DECLARE @Khach BIGINT=CASE WHEN @i=5 THEN @Khach2 ELSE @Khach1 END;
+  DECLARE @ThanhPhan DECIMAL(14,0)=@Gia*@Qty;
+  DECLARE @PhuKien DECIMAL(14,0)=CASE WHEN @i=3 THEN 25000 ELSE 0 END;
+  DECLARE @Ship DECIMAL(14,0)=CASE WHEN @i=3 OR @ThanhPhan>=500000 THEN 0 ELSE 30000 END;
+  DECLARE @Giam DECIMAL(14,0)=CASE WHEN @i=4 THEN CASE WHEN FLOOR(@ThanhPhan*0.1)>50000 THEN 50000 ELSE FLOOR(@ThanhPhan*0.1) END ELSE 0 END;
+  DECLARE @Tong DECIMAL(14,0)=@ThanhPhan+@PhuKien-@Giam+@Ship;
+  DECLARE @TraTruoc DECIMAL(14,0)=CASE WHEN @i=3 THEN CEILING(@Tong*0.5) WHEN @i IN(4,5) THEN @Tong ELSE 0 END;
+  DECLARE @DaTra DECIMAL(14,0)=CASE WHEN @i IN(3,4) THEN @TraTruoc ELSE 0 END;
+  INSERT dbo.don_hang(nguoi_dung_id,trang_thai,phuong_thuc_thanh_toan,nguoi_nhan,so_dien_thoai,dia_chi_giao_hang,ghi_chu,
+   tien_hang,tien_giam,phi_giao_hang,tong_thanh_toan,ma_uu_dai,ma_chong_dat_trung,ngay_tao,ngay_giao,khung_gio,loi_chuc,
+   hinh_thuc_nhan,dat_truoc,ke_hoach_thanh_toan,can_tra_truoc,da_thanh_toan,tong_da_hoan,ngay_hoan_thanh,
+   shipper_id,vi_do_giao,kinh_do_giao,shipper_da_giao_luc)
+  VALUES(@Khach,
+   CASE @i WHEN 2 THEN 'SHIPPING' WHEN 3 THEN 'READY_FOR_PICKUP' WHEN 4 THEN 'COMPLETED' ELSE 'PENDING' END,
+   CASE WHEN @i IN(3,4) THEN 'BANK_TRANSFER' WHEN @i=5 THEN 'STRIPE' ELSE 'COD' END,
+   CASE WHEN @i=5 THEN N'Minh Khang' ELSE N'Ngọc Anh' END,CASE WHEN @i=5 THEN '0902592233' ELSE '0902592232' END,
+   CASE WHEN @i=3 THEN N'123 Nguyễn Thị Minh Khai, phường Bến Thành, TP. Hồ Chí Minh (địa chỉ mẫu)' WHEN @i=5 THEN N'45 Nguyễn Huệ, phường Sài Gòn, TP. Hồ Chí Minh (địa chỉ mẫu)' ELSE N'12 Lê Lợi, phường Bến Thành, TP. Hồ Chí Minh (địa chỉ mẫu)' END,
+   N'[MẪU '+CONVERT(NVARCHAR(1),@i)+N'/5] '+CASE @i WHEN 1 THEN N'Chờ xác nhận – thử hủy và hoàn kho.' WHEN 2 THEN N'Đang giao COD – shipper báo giao, admin ghi tiền rồi hoàn tất.' WHEN 3 THEN N'Nhận tại quầy – đã cọc 50%, có QR, còn tiền cần thu.' WHEN 4 THEN N'Hoàn thành – thử đánh giá, đổi trả, duyệt/từ chối/hoàn tiền.' ELSE N'Stripe chưa thanh toán – tạo phiên Sandbox thật, không giả giao dịch.' END,
+   @ThanhPhan+@PhuKien,@Giam,@Ship,@Tong,CASE WHEN @i=4 THEN 'BONG10' ELSE NULL END,CONVERT(VARCHAR(36),NEWID()),
+   CASE WHEN @i=4 THEN DATEADD(DAY,-1,@Luc) ELSE @Luc END,CASE WHEN @i IN(2,3,4) THEN @HomNay ELSE DATEADD(DAY,2,@HomNay) END,
+   '13:00-17:00',N'Chúc một ngày ngọt ngào!',CASE WHEN @i=3 THEN 'PICKUP' ELSE 'DELIVERY' END,0,
+   CASE WHEN @i=3 THEN 'DEPOSIT' WHEN @i IN(4,5) THEN 'FULL' ELSE 'ON_RECEIPT' END,@TraTruoc,@DaTra,0,CASE WHEN @i=4 THEN @BanGiao ELSE NULL END,
+   CASE WHEN @i IN(2,4) THEN @Shipper1 ELSE NULL END,CASE WHEN @i=3 THEN NULL WHEN @i=5 THEN 10.7743 ELSE 10.7732 END,
+   CASE WHEN @i=3 THEN NULL WHEN @i=5 THEN 106.7037 ELSE 106.7012 END,CASE WHEN @i=4 THEN TODATETIMEOFFSET(@BanGiao,'+07:00') ELSE NULL END);
+  DECLARE @Don BIGINT=SCOPE_IDENTITY();
+  INSERT dbo.chi_tiet_don_hang(don_hang_id,san_pham_id,ten_san_pham,don_gia,so_luong,tuy_chon,tuy_chon_id) VALUES(@Don,@Pid,@Ten,@Gia,@Qty,@Nhan,@Option);
+  UPDATE dbo.san_pham SET ton_kho=ton_kho-@Qty WHERE id=@Pid;
+  INSERT dbo.lich_su_kho(san_pham_id,thay_doi,ton_sau,ly_do,nguoi_thuc_hien,ngay_tao)
+   SELECT id,-@Qty,ton_kho,N'Đơn mẫu #'+CONVERT(NVARCHAR(20),@Don),'DEMO_SQL',@Luc FROM dbo.san_pham WHERE id=@Pid;
+  IF @i=3
+  BEGIN
+   INSERT dbo.phu_kien_don_hang(don_hang_id,phu_kien_id,ten,don_gia,so_luong) SELECT @Don,id,ten,gia,1 FROM dbo.phu_kien WHERE ten IN(N'Nến sinh nhật',N'Thiệp chúc mừng');
+   UPDATE dbo.phu_kien SET ton_kho=ton_kho-1 WHERE ten IN(N'Nến sinh nhật',N'Thiệp chúc mừng');
+  END;
+  IF @DaTra>0 INSERT dbo.lich_su_thanh_toan(don_hang_id,loai,so_tien,tham_chieu,nguoi_xac_nhan,ma_chong_lap,ngay_tao)
+   VALUES(@Don,'RECEIPT',@DaTra,N'DEMO-THU-'+CONVERT(NVARCHAR(20),@Don),'admin@gmail.com',CONVERT(VARCHAR(36),NEWID()),CASE WHEN @i=4 THEN @BanGiao ELSE @Luc END);
+  IF @i=4
+  BEGIN
+   INSERT dbo.luot_su_dung_ma(ma_giam_gia_id,nguoi_dung_id,don_hang_id) SELECT id,@Khach1,@Don FROM dbo.ma_giam_gia WHERE ma='BONG10';
+   UPDATE dbo.ma_giam_gia SET so_luot_da_dung=so_luot_da_dung+1 WHERE ma='BONG10';
+  END;
+  INSERT dbo.thong_bao(nguoi_dung_id,tieu_de,noi_dung,lien_ket,da_doc,ngay_tao) VALUES
+   (@Khach,N'Đơn mẫu #'+CONVERT(NVARCHAR(20),@Don),N'Đây là dữ liệu thực hành, không phải giao dịch thật. Mở chi tiết để xem kịch bản.', '/orders/'+CONVERT(VARCHAR(20),@Don),0,@Luc),
+   (@Admin,N'Đơn mẫu #'+CONVERT(NVARCHAR(20),@Don),N'Dữ liệu thực hành – xem ghi chú trong đơn để thao tác đúng luồng.', '/admin/orders/'+CONVERT(VARCHAR(20),@Don),0,@Luc);
+  IF @i=2 INSERT dbo.thong_bao(nguoi_dung_id,tieu_de,noi_dung,lien_ket,da_doc,ngay_tao) VALUES(@Shipper1,N'Đơn giao mẫu',N'Bật chia sẻ GPS nếu muốn thực hành theo dõi; dữ liệu SQL không giả vị trí shipper.','/shipper/orders/'+CONVERT(VARCHAR(20),@Don),0,@Luc);
+  SET @i+=1;
+ END;
+ -- Hai yêu cầu riêng: chờ báo giá, và nhận quầy đã chốt/duyệt/cọc để thử lịch sản xuất và QR.
+ INSERT dbo.yeu_cau_banh_rieng(nguoi_dung_id,nguoi_nhan,so_dien_thoai,yeu_cau,huong_vi,so_nguoi,ngan_sach,ngay_nhan,khung_gio,hinh_thuc_nhan,dia_chi,phuong_thuc_thanh_toan,loi_chuc,trang_thai,tong_bao_gia,phan_hoi,ma_chong_dat_trung,ngay_tao,ngay_cap_nhat,ke_hoach_thanh_toan,can_tra_truoc,da_thanh_toan,vi_do,kinh_do) VALUES
+ (@Khach2,N'Minh Khang','0902592233',N'[MẪU] Bánh sinh nhật màu xanh pastel, trang trí bóng bay và tên người nhận.',N'Vani và dâu',8,600000,DATEADD(DAY,7,@HomNay),'13:00-17:00','DELIVERY',N'45 Nguyễn Huệ, phường Sài Gòn, TP. Hồ Chí Minh (địa chỉ mẫu)','BANK_TRANSFER',N'Chúc mừng sinh nhật!','SENT',NULL,NULL,CONVERT(VARCHAR(36),NEWID()),@Luc,@Luc,'FULL',0,0,10.7743,106.7037),
+ (@Khach1,N'Ngọc Anh','0902592232',N'[MẪU] Bánh kem dâu màu hồng, trang trí hoa nhỏ, lời chúc và nến đi cùng.',N'Dâu và vani',10,700000,DATEADD(DAY,5,@HomNay),'09:00-12:00','PICKUP',N'123 Nguyễn Thị Minh Khai, phường Bến Thành, TP. Hồ Chí Minh (địa chỉ mẫu)','BANK_TRANSFER',N'Mừng sinh nhật Ngọc Anh','ACCEPTED',650000,N'Báo giá mẫu 650.000 đ, gồm trang trí và phụ kiện. Khách đã chốt báo giá, duyệt mẫu và cọc 325.000 đ.',CONVERT(VARCHAR(36),NEWID()),@Luc,@Luc,'DEPOSIT',325000,325000,NULL,NULL);
+ DECLARE @Rieng BIGINT=SCOPE_IDENTITY();
+ INSERT dbo.mau_banh_thiet_ke(banh_rieng_id,anh_mau,noi_dung,trang_thai,y_kien_khach,nguoi_gui,ngay_gui,ngay_phan_hoi)
+ SELECT @Rieng,duong_dan_anh,N'Ảnh bánh tham khảo trong đồ án, trang trí hồng và dâu; không phải cam kết ảnh đơn thực tế.','APPROVED',N'Đồng ý mẫu để thực hành.','admin@gmail.com',@Luc,@Luc FROM dbo.san_pham WHERE id=(SELECT san_pham_id FROM @Mau WHERE stt=3);
+ INSERT dbo.lich_su_thanh_toan(banh_rieng_id,loai,so_tien,tham_chieu,nguoi_xac_nhan,ma_chong_lap,ngay_tao) VALUES(@Rieng,'RECEIPT',325000,N'DEMO-COC-BANH-RIENG','admin@gmail.com',CONVERT(VARCHAR(36),NEWID()),@Luc);
+ -- Kho thấp/hết hàng ngoài các bánh đã dùng trong đơn, giúp thử dashboard.
+ DECLARE @KhoMau TABLE(san_pham_id BIGINT,thay_doi INT,ton_sau INT,ly_do NVARCHAR(300),nguoi_thuc_hien VARCHAR(190),ngay_tao DATETIME2);
+ ;WITH extra AS(SELECT TOP(2) id,ROW_NUMBER() OVER(ORDER BY id) rn FROM dbo.san_pham WHERE id NOT IN(SELECT san_pham_id FROM @Mau) ORDER BY id)
+ UPDATE p SET ton_kho=CASE WHEN e.rn=1 THEN 2 ELSE 0 END
+ OUTPUT inserted.id,inserted.ton_kho-deleted.ton_kho,inserted.ton_kho,N'Điều chỉnh tồn mẫu để thử cảnh báo','DEMO_SQL',@Luc
+ INTO @KhoMau(san_pham_id,thay_doi,ton_sau,ly_do,nguoi_thuc_hien,ngay_tao)
+ FROM dbo.san_pham p JOIN extra e ON e.id=p.id;
+ INSERT dbo.lich_su_kho(san_pham_id,thay_doi,ton_sau,ly_do,nguoi_thuc_hien,ngay_tao) SELECT * FROM @KhoMau;
+ INSERT dbo.thong_bao(nguoi_dung_id,tieu_de,noi_dung,lien_ket,da_doc,ngay_tao) VALUES
+ (@Admin,N'Kho mẫu có bánh sắp hết/hết hàng',N'Bấm xem danh sách để thực hành nhập kho.','/admin/products?stock=warning',0,@Luc);
+ COMMIT TRANSACTION;
+ PRINT N'Đã tạo 5 tài khoản (mật khẩu mẫu 123456), 5 đơn, 2 yêu cầu bánh riêng, 5 voucher mới còn hạn và 1 voucher hết hạn.';
+ SELECT email,vai_tro,ten FROM dbo.nguoi_dung ORDER BY id;
+ SELECT id,ghi_chu,trang_thai,tong_thanh_toan,da_thanh_toan FROM dbo.don_hang ORDER BY id;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW;
+END CATCH;
+
+GO
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+-- 18. Thông tin đối soát hoàn thực tế; không xóa hoặc thay số tiền cũ.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF COL_LENGTH(N'dbo.lich_su_thanh_toan',N'kenh_hoan') IS NULL ALTER TABLE dbo.lich_su_thanh_toan ADD kenh_hoan VARCHAR(30) NULL;
+ IF COL_LENGTH(N'dbo.lich_su_thanh_toan',N'noi_nhan_hoan') IS NULL ALTER TABLE dbo.lich_su_thanh_toan ADD noi_nhan_hoan NVARCHAR(200) NULL;
+ IF COL_LENGTH(N'dbo.lich_su_thanh_toan',N'ma_giao_dich_hoan') IS NULL ALTER TABLE dbo.lich_su_thanh_toan ADD ma_giao_dich_hoan NVARCHAR(100) NULL;
+ -- Dynamic SQL prevents SQL Server compiling index references before new columns exist.
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.lich_su_thanh_toan') AND name=N'ux_ma_hoan_thuc_te')
+ EXEC(N'CREATE UNIQUE INDEX ux_ma_hoan_thuc_te ON dbo.lich_su_thanh_toan(kenh_hoan,ma_giao_dich_hoan) WHERE kenh_hoan IS NOT NULL AND ma_giao_dich_hoan IS NOT NULL');
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
  THROW;
 END CATCH;
 GO
-PRINT N'Đã bổ sung Stripe Sandbox; giữ nguyên dữ liệu và các khoản thu/hoàn hiện có.';
+
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+-- 19. Giỏ theo tài khoản, địa chỉ mặc định và lựa chọn nhận gần nhất.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF COL_LENGTH(N'dbo.dia_chi',N'mac_dinh') IS NULL ALTER TABLE dbo.dia_chi ADD mac_dinh BIT NOT NULL CONSTRAINT df_dia_chi_mac_dinh DEFAULT 0 WITH VALUES;
+ IF COL_LENGTH(N'dbo.nguoi_dung',N'hinh_thuc_nhan_gan_nhat') IS NULL ALTER TABLE dbo.nguoi_dung ADD hinh_thuc_nhan_gan_nhat VARCHAR(30) NULL;
+ IF COL_LENGTH(N'dbo.nguoi_dung',N'khung_gio_nhan_gan_nhat') IS NULL ALTER TABLE dbo.nguoi_dung ADD khung_gio_nhan_gan_nhat VARCHAR(20) NULL;
+ EXEC(N';WITH x AS(SELECT id,ROW_NUMBER() OVER(PARTITION BY nguoi_dung_id ORDER BY id DESC) rn FROM dbo.dia_chi WHERE nguoi_dung_id NOT IN(SELECT nguoi_dung_id FROM dbo.dia_chi WHERE mac_dinh=1)) UPDATE a SET mac_dinh=1 FROM dbo.dia_chi a JOIN x ON x.id=a.id WHERE x.rn=1');
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.dia_chi') AND name=N'ux_dia_chi_mac_dinh')
+ EXEC(N'CREATE UNIQUE INDEX ux_dia_chi_mac_dinh ON dbo.dia_chi(nguoi_dung_id) WHERE mac_dinh=1');
+ IF OBJECT_ID(N'dbo.dong_gio_hang',N'U') IS NULL
+ CREATE TABLE dbo.dong_gio_hang(
+  id BIGINT IDENTITY(1,1) PRIMARY KEY,
+  nguoi_dung_id BIGINT NOT NULL REFERENCES dbo.nguoi_dung(id),
+  san_pham_id BIGINT NOT NULL REFERENCES dbo.san_pham(id),
+  tuy_chon_id BIGINT NOT NULL DEFAULT 0,
+  so_luong INT NOT NULL CHECK(so_luong BETWEEN 1 AND 99),
+  CONSTRAINT uq_dong_gio_hang UNIQUE(nguoi_dung_id,san_pham_id,tuy_chon_id)
+ );
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW;
+END CATCH;
 GO
 
-PRINT N'Hoàn tất khởi tạo Bóng Bakery: 25 bảng, 13 danh mục và 39 bánh mẫu có ảnh.';
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+-- Giỏ mẫu và lựa chọn nhận bánh (chỉ dùng khi khởi tạo đầy đủ file tổng).
+BEGIN TRY
+ BEGIN TRANSACTION;
+ UPDATE dbo.nguoi_dung SET hinh_thuc_nhan_gan_nhat=CASE WHEN email='khach1@gmail.com' THEN 'PICKUP' ELSE 'DELIVERY' END,khung_gio_nhan_gan_nhat='13:00-17:00' WHERE email IN('khach1@gmail.com','khach2@gmail.com');
+ INSERT dbo.dong_gio_hang(nguoi_dung_id,san_pham_id,tuy_chon_id,so_luong)
+ SELECT u.id,p.id,COALESCE(o.id,0),1 FROM dbo.nguoi_dung u CROSS APPLY(SELECT TOP(1) id FROM dbo.san_pham WHERE dang_ap_dung=1 AND ton_kho>=5 ORDER BY id DESC) p
+ OUTER APPLY(SELECT TOP(1) id FROM dbo.tuy_chon_banh WHERE san_pham_id=p.id AND dang_ban=1 ORDER BY id) o
+ WHERE u.email IN('khach1@gmail.com','khach2@gmail.com');
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
+ THROW;
+END CATCH;
+GO
+
+IF COALESCE(TRY_CONVERT(INT,SESSION_CONTEXT(N'bong_bakery_setup_allowed')),0)<>1 RETURN;
+PRINT N'Hoàn tất Bóng Bakery: 26 bảng, 39 bánh, 5 tài khoản, 5 đơn mẫu, 2 bánh riêng và voucher.';
+
+GO
+
+EXEC sys.sp_set_session_context @key=N'bong_bakery_setup_allowed',@value=0;
 GO

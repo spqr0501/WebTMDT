@@ -3,6 +3,9 @@ import com.example.demo.entity.*;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.domain.*;
 public interface CustomCakeRequestRepository extends JpaRepository<CustomCakeRequest,Long>{
+ Page<CustomCakeRequest> findByStatusInAndPaymentPaidGreaterThan(java.util.Collection<CustomCakeStatus> statuses,java.math.BigDecimal amount,Pageable page);
+ long countByStatusInAndPaymentPaidGreaterThan(java.util.Collection<CustomCakeStatus> statuses,java.math.BigDecimal amount);
+
  java.util.List<CustomCakeRequest> findByCompletedAtGreaterThanEqualAndCompletedAtLessThan(java.time.LocalDateTime from,java.time.LocalDateTime to);
  java.util.List<CustomCakeRequest> findByReceiveDateBetweenOrderByReceiveDateAscReceiveSlotAsc(java.time.LocalDate from,java.time.LocalDate to);
  Page<CustomCakeRequest> findByUserIdOrderByCreatedAtDesc(Long userId,Pageable page);

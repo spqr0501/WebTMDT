@@ -4,6 +4,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 @Entity @Table(name="lich_su_thanh_toan")
 public class PaymentRecord {
+ @Column(name="kenh_hoan",length=30) private String refundChannel;
+ @org.hibernate.annotations.Nationalized @Column(name="noi_nhan_hoan",length=200) private String refundDestination;
+ @org.hibernate.annotations.Nationalized @Column(name="ma_giao_dich_hoan",length=100) private String refundTransactionId;
+ public String getRefundChannel(){return refundChannel;}public void setRefundChannel(String v){refundChannel=v;}
+ public String getRefundDestination(){return refundDestination;}public void setRefundDestination(String v){refundDestination=v;}
+ public String getRefundTransactionId(){return refundTransactionId;}public void setRefundTransactionId(String v){refundTransactionId=v;}
+
  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="doi_tra_id") private AfterSalesRequest afterSales;
  public AfterSalesRequest getAfterSales(){return afterSales;} public void setAfterSales(AfterSalesRequest v){afterSales=v;}
  public enum Kind { RECEIPT, REFUND }

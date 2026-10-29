@@ -23,6 +23,7 @@ public class OrderService {
   User user=users.lockById(accounts.current(email).getId()).orElseThrow();
   if(!user.getEnabled())throw new BusinessException("Tài khoản đã bị khóa.");
   var prior=orders.findByCheckoutTokenAndUserId(form.getToken(),user.getId());if(prior.isPresent())return prior.get();
+  var violations=validator.validate(form);if(!violations.isEmpty())throw new BusinessException(violations.iterator().next().getMessage());
   if(cart.isEmpty())throw new BusinessException("Giỏ hàng đang trống.");
   if(cart.size()>50)throw new BusinessException("Giỏ hàng tối đa 50 sản phẩm.");
   validateDelivery(form);if(form.getPaymentMethod()==PaymentMethod.STRIPE&&!stripeSettings.ready())throw new BusinessException("Stripe Sandbox chưa sẵn sàng. Vui lòng chọn phương thức khác hoặc cấu hình khóa/webhook.");
@@ -31,7 +32,8 @@ public class OrderService {
   if(form.getFulfillmentMethod()==FulfillmentMethod.DELIVERY){if(form.getUseNewAddress()){
    var f=form.getNewAddress();if(f==null||!validator.validate(f).isEmpty())throw new BusinessException("Kiểm tra người nhận, số điện thoại và địa chỉ mới (tối đa 500 ký tự).");GeoService.validate(f.getLatitude(),f.getLongitude());address=new Address();address.setRecipient(f.getRecipient().strip());address.setPhone(f.getPhone().strip());address.setDetail(f.getDetail().strip());address.setLatitude(f.getLatitude());address.setLongitude(f.getLongitude());
   }else{if(form.getAddressId()==null)throw new BusinessException("Chọn địa chỉ giao hàng hoặc nhập địa chỉ mới.");address=addresses.findByIdAndUserId(form.getAddressId(),user.getId()).orElseThrow(()->new BusinessException("Địa chỉ giao hàng không hợp lệ."));}}
-  else if(form.getPickupRecipient()==null||form.getPickupRecipient().isBlank()||form.getPickupRecipient().length()>100||form.getPickupPhone()==null||!form.getPickupPhone().matches("[0-9+() .-]{8,20}"))throw new BusinessException("Nhập họ tên và số điện thoại người đến nhận bánh.");
+  else if(form.getPickupRecipient()==null||form.getPickupRecipient().isBlank()||form.getPickupRecipient().length()>100||form.getPickupPhone()==null||!form.getPickupPhone().matches("0[35789][0-9]{8}"))throw new BusinessException("Nhập họ tên và số di động Việt Nam 10 số của người đến nhận bánh.");
+  if(address!=null){String phone=VietnamPhone.normalize(address.getPhone());if(phone==null||!phone.matches("0[35789][0-9]{8}"))throw new BusinessException("SĐT của địa chỉ đã lưu chưa hợp lệ. Hãy sửa trong Trang cá nhân → Địa chỉ giao hàng hoặc nhập địa chỉ mới (số di động Việt Nam 10 số).");address.setPhone(phone);GeoService.validate(address.getLatitude(),address.getLongitude());}
   CustomerOrder order=new CustomerOrder();order.setUser(user);order.setCheckoutToken(form.getToken());order.setFulfillmentMethod(form.getFulfillmentMethod());order.setPreorder(form.getPreorder());
   if(address!=null){order.setRecipient(address.getRecipient());order.setPhone(address.getPhone());order.setDeliveryAddress(address.getDetail());order.setDeliveryLatitude(address.getLatitude());order.setDeliveryLongitude(address.getLongitude());}
   else{order.setRecipient(form.getPickupRecipient().strip());order.setPhone(form.getPickupPhone().strip());order.setDeliveryAddress(shopAddress==null||shopAddress.isBlank()?"Bóng Bakery — cửa hàng sẽ xác nhận địa chỉ nhận bánh":shopAddress);}order.setPaymentMethod(form.getFulfillmentMethod()==FulfillmentMethod.PICKUP&&form.getPaymentMethod()!=PaymentMethod.STRIPE?PaymentMethod.BANK_TRANSFER:form.getPaymentMethod());order.setNote(form.getNote());order.setDeliveryDate(form.getDeliveryDate());order.setDeliverySlot(form.getDeliverySlot());order.setCakeMessage(form.getCakeMessage());
@@ -47,7 +49,7 @@ public class OrderService {
   if(!code.isEmpty()){
    voucher=vouchers.lockByCode(code).orElseThrow(()->new BusinessException("Mã giảm giá không tồn tại."));discount=voucherService.discount(voucher,user.getId(),cakeSubtotal);voucher.setUsedCount(voucher.getUsedCount()+1);order.setVoucherCode(code);
   }
-  order.setSubtotal(subtotal);order.setDiscount(discount);order.setShippingFee(form.getFulfillmentMethod()==FulfillmentMethod.PICKUP?BigDecimal.ZERO:shipping(cakeSubtotal));order.setTotal(subtotal.subtract(discount).add(order.getShippingFee()));PaymentPolicy.configure(order.getPayment(),order.getTotal(),order.getFulfillmentMethod(),order.getPaymentMethod(),form.getPaymentPlan());orders.saveAndFlush(order);
+  order.setSubtotal(subtotal);order.setDiscount(discount);order.setShippingFee(form.getFulfillmentMethod()==FulfillmentMethod.PICKUP?BigDecimal.ZERO:shipping(cakeSubtotal));order.setTotal(subtotal.subtract(discount).add(order.getShippingFee()));PaymentPolicy.configure(order.getPayment(),order.getTotal(),order.getFulfillmentMethod(),order.getPaymentMethod(),form.getPaymentPlan());orders.saveAndFlush(order);user.setLastFulfillmentMethod(form.getFulfillmentMethod());user.setLastDeliverySlot(form.getDeliverySlot());
   if(voucher!=null){VoucherUsage usage=new VoucherUsage();usage.setUser(user);usage.setVoucher(voucher);usage.setOrder(order);usages.save(usage);}
   String summary=order.getItems().stream().map(i->i.getProductName()+" ("+i.getOptionLabel()+") × "+i.getQuantity()).collect(java.util.stream.Collectors.joining("; "));
   if(!order.getAccessories().isEmpty())summary+="; "+order.getAccessories().stream().map(i->i.getName()+" × "+i.getQuantity()).collect(java.util.stream.Collectors.joining("; "));
@@ -56,7 +58,7 @@ public class OrderService {
   return order;
  }
  public static void validateDelivery(CheckoutForm f){
-  java.time.LocalDate today=java.time.LocalDate.now();
+  java.time.LocalDate today=BakeryClock.today();
   if(f.getDeliveryDate()==null||!f.getDeliveryDate().isAfter(today)||f.getDeliveryDate().isAfter(today.plusDays(f.getPreorder()?90:30)))throw new BusinessException("Chọn ngày nhận từ ngày mai đến 30 ngày tới; bật đặt trước để chọn đến 90 ngày.");
   if(f.getDeliverySlot()==null||!java.util.Set.of("09:00-12:00","13:00-17:00","18:00-20:00").contains(f.getDeliverySlot()))throw new BusinessException("Vui lòng chọn khung giờ nhận bánh.");
  }
@@ -71,9 +73,13 @@ public class OrderService {
  @Transactional public void transition(Long id,OrderStatus next){transition(id,next,"admin");}
  @Transactional public void transition(Long id,OrderStatus next,String actor){move(orders.lockById(id).orElseThrow(()->new BusinessException("Không tìm thấy đơn hàng.")),next,actor);}
  private void move(CustomerOrder o,OrderStatus next,String actor){
+  if(next==OrderStatus.CANCELLED&&o.getStatus()==OrderStatus.CANCELLED)return;
   if(!o.canMoveTo(next))throw new BusinessException("Không thể chuyển trạng thái đơn hàng theo bước này.");
   if(next==OrderStatus.CONFIRMED||next==OrderStatus.PREPARING)PaymentPolicy.requireUpfront(o.getPayment());
-  if(next==OrderStatus.COMPLETED&&o.getFulfillmentMethod()==FulfillmentMethod.PICKUP)PaymentPolicy.requireSettled(o.getPayment(),o.getTotal());
+  if(next==OrderStatus.COMPLETED){
+   PaymentPolicy.requireSettled(o.getPayment(),o.getTotal());
+   if(o.getFulfillmentMethod()==FulfillmentMethod.DELIVERY&&o.getHandedOverAt()==null)throw new BusinessException("Shipper chưa xác nhận bàn giao bánh. Chỉ hoàn tất sau khi đã giao và đối soát đủ tiền.");
+  }
   if(next==OrderStatus.CANCELLED){
    o.getItems().stream().sorted(Comparator.comparing(i->i.getProduct().getId())).forEach(i->{Product p=products.lockById(i.getProduct().getId()).orElseThrow();p.setStock(Math.addExact(p.getStock(),i.getQuantity()));stock.record(p,i.getQuantity(),"Hoàn kho do hủy đơn #"+o.getId(),actor);});
    accessories.restore(o);
@@ -82,9 +88,10 @@ public class OrderService {
   if(next==OrderStatus.SHIPPING&&(o.getShipper()==null||!o.getShipper().getEnabled()||o.getShipper().getRole()!=Role.SHIPPER))throw new BusinessException("Hãy phân công shipper đang hoạt động trước khi chuyển sang đang giao.");
   if(next==OrderStatus.CANCELLED||next==OrderStatus.COMPLETED)DeliveryService.clearLocation(o);
   o.setStatus(next);
-  if(next==OrderStatus.COMPLETED)o.setCompletedAt(java.time.LocalDateTime.now());
+  if(next==OrderStatus.COMPLETED)o.setCompletedAt(BakeryClock.now());
   String message=switch(next){case CONFIRMED->"Cửa hàng đã xác nhận đơn và lịch nhận bánh.";case PREPARING->"Bóng Bakery đang chuẩn bị bánh cho bạn.";case SHIPPING->"Bánh đang được giao đến địa chỉ của bạn. Vui lòng chú ý điện thoại.";case READY_FOR_PICKUP->"Bánh đã sẵn sàng. Bạn có thể đến nhận theo lịch tại: "+o.getDeliveryAddress();case COMPLETED->"Đơn bánh đã hoàn thành. Bạn có thể vào chi tiết bánh để gửi đánh giá.";case CANCELLED->"Đơn đã hủy. Tồn kho đã hoàn lại; lượt mã giảm giá không được hoàn. Nếu đã chuyển tiền, khoản hoàn cần cửa hàng đối soát và xử lý riêng.";default->"Trạng thái đơn: "+next.getLabel();};
+  if(next==OrderStatus.CANCELLED&&o.getPayment().getPaid().signum()>0)message+=" Cần hoàn "+o.getPayment().getPaid()+" đ; cửa hàng phải hoàn thực tế và lưu mã giao dịch. Theo dõi tại chi tiết đơn.";
   notices.send(o.getUser(),"Đơn #"+o.getId()+": "+next.getLabel(),message,"/orders/"+o.getId());
-  if(next==OrderStatus.CANCELLED)notices.admins("Đơn #"+o.getId()+" đã hủy","Đơn của "+o.getUser().getName()+" đã hủy bởi "+actor+".","/admin/orders/"+o.getId());
+  if(next==OrderStatus.CANCELLED)notices.admins("Đơn #"+o.getId()+" đã hủy","Đơn của "+o.getUser().getName()+" đã hủy bởi "+actor+"."+(o.getPayment().getPaid().signum()>0?" CẦN HOÀN "+o.getPayment().getPaid()+" đ. Xử lý trong mục Hoàn tiền sau hủy.":""),"/admin/orders/"+o.getId());
  }
 }

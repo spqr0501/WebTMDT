@@ -7,6 +7,13 @@ import org.springframework.ui.Model;
 import org.springframework.http.HttpStatus;
 @ControllerAdvice
 public class GlobalAdvice {
+ @org.springframework.beans.factory.annotation.Autowired private com.example.demo.repository.CustomerOrderRepository refundOrders;
+ @org.springframework.beans.factory.annotation.Autowired private com.example.demo.repository.CustomCakeRequestRepository refundCustom;
+ @ModelAttribute("pendingRefundCount") public long pendingRefundCount(org.springframework.security.core.Authentication auth){
+  if(auth==null||auth.getAuthorities().stream().noneMatch(a->a.getAuthority().equals("ROLE_ADMIN")))return 0;
+  return refundOrders.countByStatusAndPaymentPaidGreaterThan(com.example.demo.entity.OrderStatus.CANCELLED,java.math.BigDecimal.ZERO)+refundCustom.countByStatusInAndPaymentPaidGreaterThan(java.util.List.of(com.example.demo.entity.CustomCakeStatus.CANCELLED,com.example.demo.entity.CustomCakeStatus.REJECTED),java.math.BigDecimal.ZERO);
+ }
+
  @org.springframework.beans.factory.annotation.Autowired private com.example.demo.config.StripeSettings stripeSettings;
  @org.springframework.beans.factory.annotation.Autowired private FavoriteService favorites;
  @ModelAttribute("favoriteIds") public java.util.Set<Long> favoriteIds(java.security.Principal p){return p==null?java.util.Set.of():favorites.ids(p.getName());}

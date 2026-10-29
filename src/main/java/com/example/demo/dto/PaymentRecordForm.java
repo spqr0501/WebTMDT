@@ -3,6 +3,15 @@ import jakarta.validation.constraints.*;
 import com.example.demo.entity.PaymentRecord;
 import java.math.BigDecimal;
 public class PaymentRecordForm {
+ @Size(max=30) private String refundChannel;
+ @Size(max=200) private String refundDestination;
+ @Size(max=100) private String refundTransactionId;
+ private boolean refundConfirmed;
+ public String getRefundChannel(){return refundChannel;}public void setRefundChannel(String v){refundChannel=v;}
+ public String getRefundDestination(){return refundDestination;}public void setRefundDestination(String v){refundDestination=v;}
+ public String getRefundTransactionId(){return refundTransactionId;}public void setRefundTransactionId(String v){refundTransactionId=v;}
+ public boolean getRefundConfirmed(){return refundConfirmed;}public void setRefundConfirmed(boolean v){refundConfirmed=v;}
+
  @NotNull private PaymentRecord.Kind kind=PaymentRecord.Kind.RECEIPT;
  @NotNull @DecimalMin("1") @DecimalMax("99999999999999") @Digits(integer=14,fraction=0) private BigDecimal amount;
  @NotBlank @Size(max=200) private String reference;

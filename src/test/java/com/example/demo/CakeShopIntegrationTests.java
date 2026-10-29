@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 class CakeShopIntegrationTests {
+ @Autowired CartEntryRepository cartEntries;
  @Autowired DeliveryService delivery; @Autowired AccountService accountService;
  @Autowired FavoriteRepository favoriteRepository; @Autowired FavoriteService favoriteService; @Autowired PasswordResetRepository resetTokens; @Autowired PasswordResetService passwordResetService; @Autowired SalesReportService salesReports; @Autowired SalesReportPdfService salesReportPdf; @Autowired ExcelImportService excelImport;
  @org.springframework.test.context.bean.override.mockito.MockitoBean org.springframework.mail.javamail.JavaMailSender testMail;
@@ -36,7 +37,7 @@ class CakeShopIntegrationTests {
  @Autowired ReviewRepository reviews; @Autowired ReviewService reviewService; @Autowired ProductOptionRepository options; @Autowired OptionService optionService; @Autowired StockMovementRepository movements;
  User alice,bob,manager,driver;Product cake;Category category;Address address;Voucher voucher;
  @BeforeEach void setup(){
-  org.mockito.Mockito.reset(testMail);org.springframework.test.util.ReflectionTestUtils.setField(passwordResetService,"enabled",false);org.springframework.test.util.ReflectionTestUtils.setField(passwordResetService,"from","");favoriteRepository.deleteAll();resetTokens.deleteAll();paymentRecords.deleteAll();afterSales.deleteAll();supportMessages.deleteAll();supportTickets.deleteAll();designs.deleteAll();notifications.deleteAll();customRequests.deleteAll();reviews.deleteAll();options.deleteAll();movements.deleteAll();usages.deleteAll();items.deleteAll();orders.deleteAll();accessoryCatalog.deleteAll();addresses.deleteAll();products.deleteAll();categories.deleteAll();vouchers.deleteAll();users.deleteAll();
+  org.mockito.Mockito.reset(testMail);org.springframework.test.util.ReflectionTestUtils.setField(passwordResetService,"enabled",false);org.springframework.test.util.ReflectionTestUtils.setField(passwordResetService,"from","");org.springframework.security.core.context.SecurityContextHolder.clearContext();cartEntries.deleteAll();favoriteRepository.deleteAll();resetTokens.deleteAll();paymentRecords.deleteAll();afterSales.deleteAll();supportMessages.deleteAll();supportTickets.deleteAll();designs.deleteAll();notifications.deleteAll();customRequests.deleteAll();reviews.deleteAll();options.deleteAll();movements.deleteAll();usages.deleteAll();items.deleteAll();orders.deleteAll();accessoryCatalog.deleteAll();addresses.deleteAll();products.deleteAll();categories.deleteAll();vouchers.deleteAll();users.deleteAll();
   alice=createUser("alice@example.com",Role.USER);bob=createUser("bob@example.com",Role.USER);manager=createUser("admin@example.com",Role.ADMIN);driver=createUser("shipper@example.com",Role.SHIPPER);driver.setShipperPhone("0901112233");driver.setShipperVehicle("Xe máy 59A-12345");driver=users.save(driver);
   category=new Category();category.setName("Bánh kem");category.setDescription("Bánh tươi");category=categories.save(category);
   cake=new Product();cake.setName("Strawberry Cloud");cake.setDescription("Kem dâu");cake.setPrice(new BigDecimal("320000"));cake.setStock(10);cake.setCategory(category);cake.setFeatured(true);cake=products.save(cake);
@@ -86,13 +87,13 @@ class CakeShopIntegrationTests {
  @Test void cancellationRestoresOnceAndVoucherStaysConsumed(){
   CustomerOrder o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),2),form());orderService.cancel(alice.getEmail(),o.getId());
   assertEquals(10,products.findById(cake.getId()).orElseThrow().getStock());assertEquals(1,vouchers.findById(voucher.getId()).orElseThrow().getUsedCount());
-  assertThrows(BusinessException.class,()->orderService.cancel(alice.getEmail(),o.getId()));
+  assertDoesNotThrow(()->orderService.cancel(alice.getEmail(),o.getId()));
   assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form()));assertEquals(10,products.findById(cake.getId()).orElseThrow().getStock());
  }
  @Test void orderStateMachineAndRevenue(){
   CustomerOrder o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());
   assertThrows(BusinessException.class,()->orderService.transition(o.getId(),OrderStatus.COMPLETED));orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);
-  assertThrows(BusinessException.class,()->orderService.cancel(alice.getEmail(),o.getId()));delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),OrderStatus.SHIPPING);orderService.transition(o.getId(),OrderStatus.COMPLETED);
+  assertThrows(BusinessException.class,()->orderService.cancel(alice.getEmail(),o.getId()));delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),OrderStatus.SHIPPING);finishDelivery(o.getId());
   assertEquals(0,o.getTotal().compareTo(orders.revenue()));assertEquals(1,items.bestSellers(org.springframework.data.domain.PageRequest.of(0,5)).size());
  }
  @Test void invalidVouchersAndRollback(){
@@ -154,7 +155,14 @@ class CakeShopIntegrationTests {
   mvc.perform(post("/admin/products/save").with(user(manager.getEmail()).roles("ADMIN")).with(csrf()).param("name","").param("price","-1")).andExpect(status().isOk()).andExpect(model().attributeHasErrors("form"));
  }
 
- void completePurchase(){var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),OrderStatus.SHIPPING);orderService.transition(o.getId(),OrderStatus.COMPLETED);}
+
+ void finishDelivery(Long id){
+  var o=orders.findById(id).orElseThrow();
+  if(o.getPayment().remaining(o.getTotal()).signum()>0)paymentService.recordOrder(id,payment(PaymentRecord.Kind.RECEIPT,o.getPayment().remaining(o.getTotal()).toPlainString()),manager.getEmail());
+  if(o.getFulfillmentMethod()==FulfillmentMethod.DELIVERY&&o.getHandedOverAt()==null)delivery.delivered(driver.getEmail(),id);
+  orderService.transition(id,OrderStatus.COMPLETED);
+ }
+ void completePurchase(){var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),OrderStatus.SHIPPING);finishDelivery(o.getId());}
  ReviewForm reviewForm(){ReviewForm f=new ReviewForm();f.setRating(5);f.setComment("Bánh rất ngon, đóng gói cẩn thận.");return f;}
  MockMultipartFile photo() throws Exception {var out=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(8,8,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",out);return new MockMultipartFile("photos","cake.png","image/png",out.toByteArray());}
  @Test void verifiedReviewWithPhotoAndModeration() throws Exception {
@@ -193,7 +201,7 @@ class CakeShopIntegrationTests {
   assertThrows(BusinessException.class,()->admin.gallery(cake.getId(),List.of(photo(),photo(),photo(),photo(),photo(),photo())));
   mvc.perform(get("/about")).andExpect(content().string(org.hamcrest.Matchers.containsString("Một chiếc bánh")));
   mvc.perform(get("/delivery")).andExpect(content().string(org.hamcrest.Matchers.containsString("Hủy đơn không hoàn lượt")));
-  mvc.perform(get("/contact")).andExpect(content().string(org.hamcrest.Matchers.containsString("Đang cập nhật")));
+  mvc.perform(get("/contact")).andExpect(content().string(org.hamcrest.Matchers.containsString("0902592231")));
  }
  @Test void concurrentReviewsCannotDuplicate() throws Exception {
   completePurchase();ExecutorService executor=Executors.newFixedThreadPool(2);CountDownLatch start=new CountDownLatch(1);
@@ -223,13 +231,13 @@ class CakeShopIntegrationTests {
   CustomerOrder o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);assertEquals(0,new BigDecimal("355000").compareTo(o.getSubtotal()));assertEquals(0,new BigDecimal("32000").compareTo(o.getDiscount()));assertEquals(0,o.getShippingFee().signum());assertEquals(0,new BigDecimal("323000").compareTo(o.getTotal()));
   CustomerOrder saved=orders.findById(o.getId()).orElseThrow();assertEquals(1,saved.getItems().size());assertEquals(2,saved.getAccessories().size());assertEquals(4,accessoryCatalog.findById(candle.getId()).orElseThrow().getStock());
   mvc.perform(get("/orders/"+o.getId()).with(user(alice.getEmail()))).andExpect(status().isOk());mvc.perform(get("/admin/orders/"+o.getId()).with(user(manager.getEmail()).roles("ADMIN"))).andExpect(status().isOk());
-  orderService.cancel(alice.getEmail(),o.getId());assertEquals(6,accessoryCatalog.findById(candle.getId()).orElseThrow().getStock());assertEquals(4,accessoryCatalog.findById(card.getId()).orElseThrow().getStock());assertThrows(BusinessException.class,()->orderService.cancel(alice.getEmail(),o.getId()));
+  orderService.cancel(alice.getEmail(),o.getId());assertEquals(6,accessoryCatalog.findById(candle.getId()).orElseThrow().getStock());assertEquals(4,accessoryCatalog.findById(card.getId()).orElseThrow().getStock());assertDoesNotThrow(()->orderService.cancel(alice.getEmail(),o.getId()));
  }
  @Test void accessoryFailureRollsBackCakeStockAndNotifications(){
   var candle=accessory("Nến",1,"10000");var f=form();f.setAccessories(Map.of(candle.getId(),2));assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f));assertEquals(0,orders.count());assertEquals(0,notifications.count());assertEquals(10,products.findById(cake.getId()).orElseThrow().getStock());assertEquals(1,accessoryCatalog.findById(candle.getId()).orElseThrow().getStock());
  }
  @Test void pickupUsesReadyStateAndNotShipping(){
-  var f=form();f.setFulfillmentMethod(FulfillmentMethod.PICKUP);f.setPickupRecipient("Alice");f.setPickupPhone("0901234567");var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);PaymentRecordForm deposit=new PaymentRecordForm();deposit.setKind(PaymentRecord.Kind.RECEIPT);deposit.setAmount(o.getPayment().getRequiredUpfront());deposit.setReference("Cọc qua ngân hàng");deposit.setToken(UUID.randomUUID().toString());paymentService.recordOrder(o.getId(),deposit,manager.getEmail());orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);assertThrows(BusinessException.class,()->orderService.transition(o.getId(),OrderStatus.SHIPPING));orderService.transition(o.getId(),OrderStatus.READY_FOR_PICKUP);PaymentRecordForm balance=new PaymentRecordForm();balance.setKind(PaymentRecord.Kind.RECEIPT);balance.setAmount(o.getTotal().subtract(o.getPayment().getRequiredUpfront()));balance.setReference("Thu phần còn lại khi nhận bánh");balance.setToken(UUID.randomUUID().toString());paymentService.recordOrder(o.getId(),balance,manager.getEmail());orderService.transition(o.getId(),OrderStatus.COMPLETED);assertEquals(OrderStatus.COMPLETED,orders.findById(o.getId()).orElseThrow().getStatus());assertEquals(7,notificationService.unread(alice.getEmail()));
+  var f=form();f.setFulfillmentMethod(FulfillmentMethod.PICKUP);f.setPickupRecipient("Alice");f.setPickupPhone("0901234567");var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);PaymentRecordForm deposit=new PaymentRecordForm();deposit.setKind(PaymentRecord.Kind.RECEIPT);deposit.setAmount(o.getPayment().getRequiredUpfront());deposit.setReference("Cọc qua ngân hàng");deposit.setToken(UUID.randomUUID().toString());paymentService.recordOrder(o.getId(),deposit,manager.getEmail());orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);assertThrows(BusinessException.class,()->orderService.transition(o.getId(),OrderStatus.SHIPPING));orderService.transition(o.getId(),OrderStatus.READY_FOR_PICKUP);PaymentRecordForm balance=new PaymentRecordForm();balance.setKind(PaymentRecord.Kind.RECEIPT);balance.setAmount(o.getTotal().subtract(o.getPayment().getRequiredUpfront()));balance.setReference("Thu phần còn lại khi nhận bánh");balance.setToken(UUID.randomUUID().toString());paymentService.recordOrder(o.getId(),balance,manager.getEmail());finishDelivery(o.getId());assertEquals(OrderStatus.COMPLETED,orders.findById(o.getId()).orElseThrow().getStatus());assertEquals(7,notificationService.unread(alice.getEmail()));
  }
  @Test void preorderExtendsDateLimitButRequiresFlag(){var f=form();f.setDeliveryDate(java.time.LocalDate.now().plusDays(90));assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f));f.setPreorder(true);var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);assertTrue(o.getPreorder());final var invalid=form();invalid.setPreorder(true);invalid.setDeliveryDate(java.time.LocalDate.now().plusDays(91));assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),invalid));}
  @Test void notificationsArePrivateAndReadingIsPerUser() throws Exception {
@@ -242,7 +250,7 @@ class CakeShopIntegrationTests {
  @Test void reorderIsOwnedUsesCurrentPriceAndDoesNotPlaceOrder() throws Exception {
   var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),2),form());cake=products.findById(cake.getId()).orElseThrow();cake.setPrice(new BigDecimal("400000"));products.save(cake);MockHttpSession session=new MockHttpSession();
   mvc.perform(post("/orders/"+o.getId()+"/reorder").session(session).with(user(bob.getEmail())).with(csrf())).andExpect(status().isBadRequest());assertTrue(cart.snapshot(session).isEmpty());
-  mvc.perform(post("/orders/"+o.getId()+"/reorder").session(session).with(user(alice.getEmail())).with(csrf())).andExpect(redirectedUrl("/cart"));assertEquals(2,cart.snapshot(session).get(cake.getId()));assertEquals(0,new BigDecimal("800000").compareTo(cart.subtotal(session)));assertEquals(1,orders.count());
+  mvc.perform(post("/orders/"+o.getId()+"/reorder").session(session).with(user(alice.getEmail())).with(csrf())).andExpect(redirectedUrl("/cart"));asCartUser(alice.getEmail(),()->{assertEquals(2,cart.snapshot(session).get(cake.getId()));assertEquals(0,new BigDecimal("800000").compareTo(cart.subtotal(session)));});assertEquals(1,orders.count());
   admin.archiveProduct(cake.getId());assertTrue(cart.reorder(orders.findById(o.getId()).orElseThrow(),new MockHttpSession()).contains("0 bánh"));
  }
  @Test void customCakeQuoteAcceptanceAndCompletionFlowRendersAllPages() throws Exception {
@@ -251,7 +259,7 @@ class CakeShopIntegrationTests {
   for(String path:List.of("/admin/custom-cakes","/admin/custom-cakes/"+r.getId(),"/admin/accessories"))mvc.perform(get(path).with(user(manager.getEmail()).roles("ADMIN"))).andExpect(status().isOk());
   mvc.perform(get("/custom-cakes/"+r.getId()).with(user(bob.getEmail()))).andExpect(status().isBadRequest());assertThrows(BusinessException.class,()->customService.customerAction(bob.getEmail(),r.getId(),true));assertThrows(BusinessException.class,()->customService.update(r.getId(),CustomCakeStatus.PREPARING,null,""));
   customService.update(r.getId(),CustomCakeStatus.QUOTED,new BigDecimal("650000"),"Bánh 20 cm, kèm nến và thiệp, đã gồm giao hàng.");mvc.perform(get("/custom-cakes/"+r.getId()).with(user(alice.getEmail()))).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đồng ý báo giá")));
-  customService.customerAction(alice.getEmail(),r.getId(),true);assertThrows(BusinessException.class,()->customService.customerAction(alice.getEmail(),r.getId(),false));designService.propose(r.getId(),"Bánh màu hồng đúng mẫu, lời chúc theo yêu cầu.",photo(),manager.getEmail());designService.respond(r.getId(),designs.findTopByRequestIdOrderByIdDesc(r.getId()).orElseThrow().getId(),true,"Đã kiểm tra mẫu",alice.getEmail());customService.update(r.getId(),CustomCakeStatus.PREPARING,null,"");customService.update(r.getId(),CustomCakeStatus.READY,null,"");customService.update(r.getId(),CustomCakeStatus.COMPLETED,null,"");assertEquals(CustomCakeStatus.COMPLETED,customRequests.findById(r.getId()).orElseThrow().getStatus());assertEquals(0,new BigDecimal("650000").compareTo(dashboard.report(null).total()));
+  customService.customerAction(alice.getEmail(),r.getId(),true);assertThrows(BusinessException.class,()->customService.customerAction(alice.getEmail(),r.getId(),false));designService.propose(r.getId(),"Bánh màu hồng đúng mẫu, lời chúc theo yêu cầu.",photo(),manager.getEmail());designService.respond(r.getId(),designs.findTopByRequestIdOrderByIdDesc(r.getId()).orElseThrow().getId(),true,"Đã kiểm tra mẫu",alice.getEmail());customService.update(r.getId(),CustomCakeStatus.PREPARING,null,"");customService.update(r.getId(),CustomCakeStatus.READY,null,"");paymentService.recordCustom(r.getId(),payment(PaymentRecord.Kind.RECEIPT,"650000"),manager.getEmail());customService.update(r.getId(),CustomCakeStatus.COMPLETED,null,"");assertEquals(CustomCakeStatus.COMPLETED,customRequests.findById(r.getId()).orElseThrow().getStatus());assertEquals(0,new BigDecimal("650000").compareTo(dashboard.report(null).total()));
   mvc.perform(get("/admin").with(user(manager.getEmail()).roles("ADMIN"))).andExpect(status().isOk());
  }
  @Test void customCakeMvcSubmissionAndValidation() throws Exception {
@@ -266,8 +274,8 @@ class CakeShopIntegrationTests {
   mvc.perform(post("/checkout").session(session).with(user(alice.getEmail())).with(csrf()).param("token",token).param("fulfillmentMethod","PICKUP").param("pickupRecipient","Alice").param("pickupPhone","0901234567").param("paymentMethod","COD").param("deliveryDate",java.time.LocalDate.now().plusDays(45).toString()).param("deliverySlot","13:00-17:00").param("preorder","true").param("accessories["+a.getId()+"]","2").param("action","preview")).andExpect(status().isOk()).andExpect(model().attribute("accessoryTotal",new BigDecimal("20000"))).andExpect(model().attribute("shipping",BigDecimal.ZERO));
  }
 
- PaymentRecordForm payment(PaymentRecord.Kind kind,String amount){var f=new PaymentRecordForm();f.setKind(kind);f.setAmount(new BigDecimal(amount));f.setReference("GD đối soát "+UUID.randomUUID());f.setToken(UUID.randomUUID().toString());return f;}
- CustomerOrder completedPaidOrder(){var f=form();f.setVoucherCode("");var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);paymentService.recordOrder(o.getId(),payment(PaymentRecord.Kind.RECEIPT,o.getTotal().toPlainString()),manager.getEmail());for(var state:List.of(OrderStatus.CONFIRMED,OrderStatus.PREPARING,OrderStatus.SHIPPING,OrderStatus.COMPLETED)){if(state==OrderStatus.SHIPPING)delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),state,manager.getEmail());}return orders.findById(o.getId()).orElseThrow();}
+ PaymentRecordForm payment(PaymentRecord.Kind kind,String amount){var f=new PaymentRecordForm();f.setKind(kind);f.setAmount(new BigDecimal(amount));f.setReference("GD đối soát "+UUID.randomUUID());f.setToken(UUID.randomUUID().toString());if(kind==PaymentRecord.Kind.REFUND){f.setRefundChannel("BANK_TRANSFER");f.setRefundDestination("Vietcombank · 0123456789 · Alice");f.setRefundTransactionId("HOAN-"+UUID.randomUUID());f.setRefundConfirmed(true);}return f;}
+ CustomerOrder completedPaidOrder(){var f=form();f.setVoucherCode("");var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);paymentService.recordOrder(o.getId(),payment(PaymentRecord.Kind.RECEIPT,o.getTotal().toPlainString()),manager.getEmail());for(var state:List.of(OrderStatus.CONFIRMED,OrderStatus.PREPARING,OrderStatus.SHIPPING,OrderStatus.COMPLETED)){if(state==OrderStatus.SHIPPING)delivery.assign(o.getId(),driver.getId(),manager.getEmail());if(state==OrderStatus.COMPLETED)finishDelivery(o.getId());else orderService.transition(o.getId(),state,manager.getEmail());}return orders.findById(o.getId()).orElseThrow();}
  AfterSalesRequest newReturn(CustomerOrder o,AfterSalesRequest.Resolution resolution) throws Exception {return afterSalesService.submit(o.getId(),false,alice.getEmail(),"Bánh bị hư hỏng khi bàn giao, xin cửa hàng kiểm tra ảnh.",resolution,List.of(photo()));}
 
  @Test void afterSalesRequiresOwnerCompletedTimeAndPhotos() throws Exception {
@@ -279,8 +287,8 @@ class CakeShopIntegrationTests {
   var c=newReturn(o,AfterSalesRequest.Resolution.REFUND);assertEquals(AfterSalesRequest.Status.REQUESTED,c.getStatus());assertEquals(c.getId(),newReturn(o,AfterSalesRequest.Resolution.REPLACEMENT).getId());assertEquals(1,afterSales.count());assertEquals(8,products.findById(cake.getId()).orElseThrow().getStock());
  }
  @Test void afterSalesExpiredAndLegacyOrdersGoToSupport(){
-  var o=completedPaidOrder();o.setCompletedAt(LocalDateTime.now().minusHours(25));orders.save(o);
-  assertThrows(BusinessException.class,()->newReturn(o,AfterSalesRequest.Resolution.REFUND));o.setCompletedAt(null);orders.save(o);assertThrows(BusinessException.class,()->newReturn(o,AfterSalesRequest.Resolution.REFUND));assertEquals(0,afterSales.count());
+  var o=completedPaidOrder();o.setCompletedAt(LocalDateTime.now().minusHours(25));o.setHandedOverAt(java.time.Instant.now().minusSeconds(25*3600));orders.save(o);
+  assertThrows(BusinessException.class,()->newReturn(o,AfterSalesRequest.Resolution.REFUND));o.setCompletedAt(null);o.setHandedOverAt(null);orders.save(o);assertThrows(BusinessException.class,()->newReturn(o,AfterSalesRequest.Resolution.REFUND));assertEquals(0,afterSales.count());
  }
  @Test void invalidEvidenceRollsBackRequestAndSavedPrivateFile() throws Exception {
   var o=completedPaidOrder();var good=photo();var bad=new MockMultipartFile("photos","bad.png","image/png","not an image".getBytes());var folder=java.nio.file.Path.of("target/test-uploads/private");long before=0;if(java.nio.file.Files.exists(folder))try(var files=java.nio.file.Files.list(folder)){before=files.count();}
@@ -320,7 +328,7 @@ class CakeShopIntegrationTests {
   mvc.perform(post("/admin/after-sales/"+c.getId()+"/decision").with(user(manager.getEmail()).roles("ADMIN")).param("approve","false").param("reply","Không duyệt.")).andExpect(status().isForbidden());
   mvc.perform(post("/admin/after-sales/"+c.getId()+"/decision").with(user(manager.getEmail()).roles("ADMIN")).with(csrf()).param("approve","true").param("resolution","REFUND").param("amount","10000").param("reply","Đã kiểm tra, hoàn một phần.")).andExpect(status().is3xxRedirection());
   mvc.perform(get("/admin/after-sales/"+c.getId()).with(user(manager.getEmail()).roles("ADMIN"))).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Ghi nhận khoản đã chuyển hoàn thực tế")));
-  mvc.perform(post("/admin/after-sales/"+c.getId()+"/refund").with(user(manager.getEmail()).roles("ADMIN")).with(csrf()).param("amount","10000").param("reference","GDHOAN-01").param("token",UUID.randomUUID().toString())).andExpect(status().is3xxRedirection());
+  mvc.perform(post("/admin/after-sales/"+c.getId()+"/refund").with(user(manager.getEmail()).roles("ADMIN")).with(csrf()).param("amount","10000").param("reference","GDHOAN-01").param("refundChannel","BANK_TRANSFER").param("refundDestination","Vietcombank · 0123456789 · Alice").param("refundTransactionId","HOAN-MVC-01").param("refundConfirmed","true").param("token",UUID.randomUUID().toString())).andExpect(status().is3xxRedirection());
   mvc.perform(get("/after-sales/"+c.getId()).with(user(alice.getEmail()))).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("GDHOAN-01")));
  }
  @Test void customCakeCanRequestAfterSalesAndRefund() throws Exception {
@@ -540,9 +548,89 @@ class CakeShopIntegrationTests {
  }
  @Test void gpsValidationStalePositionAndDeliveredStopWithoutFakePayment(){
   var o=deliveryOrder();delivery.start(driver.getEmail(),o.getId());String key=delivery.begin(driver.getEmail(),o.getId());assertThrows(BusinessException.class,()->delivery.location(driver.getEmail(),o.getId(),key,91.0,106.7,5.0,java.time.Instant.now()));assertThrows(BusinessException.class,()->delivery.location(driver.getEmail(),o.getId(),key,10.77,106.7,5.0,java.time.Instant.now().minusSeconds(200)));delivery.location(driver.getEmail(),o.getId(),key,10.77,106.7,5.0,java.time.Instant.now());var changed=orders.findById(o.getId()).orElseThrow();changed.setLocationUpdatedAt(java.time.Instant.now().minusSeconds(100));orders.save(changed);assertTrue(delivery.tracking(alice.getEmail(),o.getId()).stale());
-  delivery.delivered(driver.getEmail(),o.getId());delivery.delivered(driver.getEmail(),o.getId());var t=delivery.tracking(alice.getEmail(),o.getId());assertTrue(t.handedOver());assertFalse(t.sharing());assertNull(t.latitude());assertEquals(0,orders.findById(o.getId()).orElseThrow().getPayment().getPaid().signum());assertEquals(OrderStatus.SHIPPING,orders.findById(o.getId()).orElseThrow().getStatus());assertThrows(BusinessException.class,()->delivery.begin(driver.getEmail(),o.getId()));orderService.transition(o.getId(),OrderStatus.COMPLETED);assertNull(orders.findById(o.getId()).orElseThrow().getShipperLatitude());
+  delivery.delivered(driver.getEmail(),o.getId());delivery.delivered(driver.getEmail(),o.getId());var t=delivery.tracking(alice.getEmail(),o.getId());assertTrue(t.handedOver());assertFalse(t.sharing());assertNull(t.latitude());assertEquals(0,orders.findById(o.getId()).orElseThrow().getPayment().getPaid().signum());assertEquals(OrderStatus.SHIPPING,orders.findById(o.getId()).orElseThrow().getStatus());assertThrows(BusinessException.class,()->delivery.begin(driver.getEmail(),o.getId()));finishDelivery(o.getId());assertNull(orders.findById(o.getId()).orElseThrow().getShipperLatitude());
  }
  @Test void mapApisRejectAnonymousAndInvalidCoordinatesWithoutCallingProvider() throws Exception {
   mvc.perform(get("/api/maps/search").param("q","abc")).andExpect(status().is3xxRedirection());mvc.perform(get("/api/maps/reverse").with(user(alice.getEmail())).param("lat","999").param("lng","106")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").exists());mvc.perform(get("/api/maps/search").with(user(alice.getEmail())).param("q","a")).andExpect(status().isBadRequest());
  }
+
+ @Test void checkoutRejectsInvalidSavedPhoneWithoutTouchingStock(){
+  address.setPhone("000000000000000");addresses.save(address);
+  assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form()));
+  assertEquals(10,products.findById(cake.getId()).orElseThrow().getStock());assertEquals(0,orders.count());
+ }
+ @Test void pickupRejectsLongPhoneAndNormalizesVietnamCountryCode(){
+  var f=form();f.setFulfillmentMethod(FulfillmentMethod.PICKUP);f.setPickupRecipient("Alice");f.setPickupPhone("090123456789012");
+  assertThrows(BusinessException.class,()->orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f));
+  f.setPickupPhone("+84 902 592 231");var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);assertEquals("0902592231",o.getPhone());
+ }
+ @Test void deliveredOrderCannotCompleteUntilMoneyIsRecorded(){
+  var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());orderService.transition(o.getId(),OrderStatus.CONFIRMED);orderService.transition(o.getId(),OrderStatus.PREPARING);delivery.assign(o.getId(),driver.getId(),manager.getEmail());orderService.transition(o.getId(),OrderStatus.SHIPPING);
+  assertThrows(BusinessException.class,()->orderService.transition(o.getId(),OrderStatus.COMPLETED));
+  paymentService.recordOrder(o.getId(),payment(PaymentRecord.Kind.RECEIPT,o.getTotal().toPlainString()),manager.getEmail());
+  assertThrows(BusinessException.class,()->orderService.transition(o.getId(),OrderStatus.COMPLETED));
+  delivery.delivered(driver.getEmail(),o.getId());orderService.transition(o.getId(),OrderStatus.COMPLETED);assertEquals(OrderStatus.COMPLETED,orders.findById(o.getId()).orElseThrow().getStatus());
+ }
+ @Test void cancellationRepeatedDoesNotRestoreTwice(){
+  var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),2),form());orderService.cancel(alice.getEmail(),o.getId());long count=movements.count();
+  orderService.cancel(alice.getEmail(),o.getId());assertEquals(10,products.findById(cake.getId()).orElseThrow().getStock());assertEquals(count,movements.count());
+ }
+ @Test void paymentSameReferenceUnderNewTokenCannotBeCountedTwice(){
+  var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());var f=payment(PaymentRecord.Kind.RECEIPT,"100000");paymentService.recordOrder(o.getId(),f,manager.getEmail());
+  f.setToken(UUID.randomUUID().toString());assertThrows(BusinessException.class,()->paymentService.recordOrder(o.getId(),f,manager.getEmail()));
+  assertEquals(0,new BigDecimal("100000").compareTo(orders.findById(o.getId()).orElseThrow().getPayment().getPaid()));assertEquals(1,paymentRecords.count());
+ }
+ @Test void afterSalesDeadlineUsesDeliveryTimestampEvenIfAdminCompletesLate(){
+  var o=completedPaidOrder();o.setHandedOverAt(java.time.Instant.now().minusSeconds(25*3600));o.setCompletedAt(BakeryClock.now());orders.save(o);
+  assertThrows(BusinessException.class,()->newReturn(o,AfterSalesRequest.Resolution.REFUND));assertEquals(0,afterSales.count());
+ }
+ @Test void checkoutAcceptsVietnameseDateAndNewAddressCoordinates() throws Exception {
+  var session=new MockHttpSession();cart.update(session,cake.getId(),1,true);mvc.perform(get("/checkout").session(session).with(user(alice.getEmail()))).andExpect(status().isOk());
+  mvc.perform(post("/checkout").session(session).with(user(alice.getEmail())).with(csrf()).param("token",(String)session.getAttribute("checkoutToken")).param("deliveryDate",BakeryClock.today().plusDays(2).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))).param("deliverySlot","13:00-17:00").param("fulfillmentMethod","DELIVERY").param("paymentMethod","COD").param("useNewAddress","true").param("newAddress.recipient","Alice").param("newAddress.phone","+84902592231").param("newAddress.detail","12 Lê Lợi, TP Hồ Chí Minh").param("newAddress.latitude","10.77").param("newAddress.longitude","106.70")).andExpect(status().is3xxRedirection());
+  var o=orders.findAll().get(0);assertEquals("0902592231",o.getPhone());assertEquals(10.77,o.getDeliveryLatitude());
+ }
+ @Test void malformedCheckoutPaymentRendersValidationInsteadOfServerError() throws Exception {
+  var session=new MockHttpSession();cart.update(session,cake.getId(),1,true);mvc.perform(get("/checkout").session(session).with(user(alice.getEmail()))).andExpect(status().isOk());
+  mvc.perform(post("/checkout").session(session).with(user(alice.getEmail())).with(csrf()).param("token",(String)session.getAttribute("checkoutToken")).param("deliveryDate",BakeryClock.today().plusDays(2).toString()).param("deliverySlot","13:00-17:00").param("paymentMethod","FAKE")).andExpect(status().isOk()).andExpect(view().name("shop/checkout"));assertEquals(0,orders.count());
+ }
+
+
+ void asCartUser(String email,Runnable work){var before=org.springframework.security.core.context.SecurityContextHolder.getContext();var context=org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();context.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(email,"",List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));org.springframework.security.core.context.SecurityContextHolder.setContext(context);try{work.run();}finally{org.springframework.security.core.context.SecurityContextHolder.setContext(before);}}
+ @Test void accountCartSurvivesAnotherSessionAndDoesNotLeak(){
+  var first=new MockHttpSession();asCartUser(alice.getEmail(),()->cart.update(first,cake.getId(),2,true));
+  asCartUser(alice.getEmail(),()->assertEquals(2,cart.snapshot(new MockHttpSession()).get(cake.getId())));
+  asCartUser(bob.getEmail(),()->assertTrue(cart.snapshot(first).isEmpty()));
+  org.springframework.security.core.context.SecurityContextHolder.clearContext();assertTrue(cart.snapshot(first).isEmpty());
+ }
+ @Test void guestCartMergesOnceIntoAccountAndClampsStock(){
+  asCartUser(alice.getEmail(),()->cart.update(new MockHttpSession(),cake.getId(),7,true));var guest=new MockHttpSession();cart.update(guest,cake.getId(),6,true);
+  asCartUser(alice.getEmail(),()->{assertEquals(10,cart.snapshot(guest).get(cake.getId()));assertEquals(10,cart.snapshot(guest).get(cake.getId()));});assertEquals(1,cartEntries.count());
+ }
+ @Test void accountCartCanBeChangedFromTwoSessions(){
+  var one=new MockHttpSession();var two=new MockHttpSession();asCartUser(alice.getEmail(),()->{cart.update(one,cake.getId(),2,true);cart.update(two,cake.getId(),1,true);assertEquals(3,cart.snapshot(one).get(cake.getId()));cart.update(two,cake.getId(),1,false);assertEquals(1,cart.snapshot(one).get(cake.getId()));});
+ }
+ @Test void completedCheckoutRemovesOnlyPurchasedQuantities(){
+  var session=new MockHttpSession();asCartUser(alice.getEmail(),()->{cart.update(session,cake.getId(),2,true);var bought=cart.detailed(session);cart.update(new MockHttpSession(),cake.getId(),1,true);cart.removePurchased(session,bought);assertEquals(1,cart.snapshot(new MockHttpSession()).get(cake.getId()));});
+ }
+ @Test void loginMergesGuestCartAndStillRedirectsHome() throws Exception {
+  var session=new MockHttpSession();cart.update(session,cake.getId(),2,true);mvc.perform(post("/login").session(session).with(csrf()).param("username",alice.getEmail()).param("password","Password123!")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
+  asCartUser(alice.getEmail(),()->assertEquals(2,cart.snapshot(new MockHttpSession()).get(cake.getId())));
+ }
+ @Test void defaultAddressCanBeChangedAndCannotBeStolen(){
+  var f=new AddressForm();f.setRecipient("Alice mới");f.setPhone("0902592231");f.setDetail("18 Lê Lợi, TP Hồ Chí Minh");f.setDefaultAddress(true);accountService.addAddress(alice.getEmail(),f);var added=accountService.addresses(alice.getEmail()).get(0);assertTrue(added.getDefaultAddress());
+  accountService.setDefaultAddress(alice.getEmail(),address.getId());assertEquals(1,accountService.addresses(alice.getEmail()).stream().filter(Address::getDefaultAddress).count());assertThrows(BusinessException.class,()->accountService.setDefaultAddress(bob.getEmail(),address.getId()));
+  accountService.deleteAddress(alice.getEmail(),address.getId());assertTrue(accountService.addresses(alice.getEmail()).get(0).getDefaultAddress());
+ }
+ @Test void successfulOrderRemembersReceiveMethodAndSlotOnly(){
+  var f=form();f.setFulfillmentMethod(FulfillmentMethod.PICKUP);f.setPickupRecipient("Alice");f.setPickupPhone("0902592231");f.setDeliverySlot("18:00-20:00");orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),f);var u=users.findById(alice.getId()).orElseThrow();assertEquals(FulfillmentMethod.PICKUP,u.getLastFulfillmentMethod());assertEquals("18:00-20:00",u.getLastDeliverySlot());
+ }
+ @Test void cancelledCollectedOrderNeedsRefundEvidenceAndStaysInQueue(){
+  var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());paymentService.recordOrder(o.getId(),payment(PaymentRecord.Kind.RECEIPT,"100000"),manager.getEmail());orderService.cancel(alice.getEmail(),o.getId());
+  assertEquals(1,orders.countByStatusAndPaymentPaidGreaterThan(OrderStatus.CANCELLED,BigDecimal.ZERO));var refund=payment(PaymentRecord.Kind.REFUND,"100000");refund.setRefundConfirmed(false);assertThrows(BusinessException.class,()->paymentService.recordOrder(o.getId(),refund,manager.getEmail()));
+  refund.setRefundConfirmed(true);refund.setRefundTransactionId("");assertThrows(BusinessException.class,()->paymentService.recordOrder(o.getId(),refund,manager.getEmail()));refund.setRefundTransactionId("BANK-HOAN-001");paymentService.recordOrder(o.getId(),refund,manager.getEmail());paymentService.recordOrder(o.getId(),refund,manager.getEmail());assertEquals(0,orders.countByStatusAndPaymentPaidGreaterThan(OrderStatus.CANCELLED,BigDecimal.ZERO));
+ }
+ @Test void refundChannelCannotPretendAStripeRefundForBankOrder(){
+  var o=orderService.checkout(alice.getEmail(),Map.of(cake.getId(),1),form());paymentService.recordOrder(o.getId(),payment(PaymentRecord.Kind.RECEIPT,"100000"),manager.getEmail());orderService.cancel(alice.getEmail(),o.getId());var refund=payment(PaymentRecord.Kind.REFUND,"100000");refund.setRefundChannel("STRIPE_DASHBOARD");assertThrows(BusinessException.class,()->paymentService.recordOrder(o.getId(),refund,manager.getEmail()));
+ }
+
 }

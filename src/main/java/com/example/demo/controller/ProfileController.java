@@ -38,6 +38,7 @@ public class ProfileController {
   try{if(addressId==null)accounts.addAddress(p.getName(),f);else accounts.saveAddress(p.getName(),addressId,f);}catch(BusinessException e){errors.reject("address",e.getMessage());return hub(p,"addresses",0,checkout,m);}
   flash.addFlashAttribute("success","Đã lưu địa chỉ giao bánh.");return checkout?"redirect:/checkout":"redirect:/account?tab=addresses";
  }
+ @PostMapping("/account/addresses/{id}/default") public String defaultAddress(Principal p,@PathVariable Long id,RedirectAttributes flash){accounts.setDefaultAddress(p.getName(),id);flash.addFlashAttribute("success","Đã chọn địa chỉ mặc định cho lần đặt bánh tiếp theo.");return "redirect:/account?tab=addresses";}
  @PostMapping("/account/addresses/{id}/delete") public String delete(Principal p,@PathVariable Long id,RedirectAttributes flash){accounts.deleteAddress(p.getName(),id);flash.addFlashAttribute("success","Đã xóa địa chỉ khỏi sổ địa chỉ. Địa chỉ trên đơn đã đặt được giữ nguyên.");return "redirect:/account?tab=addresses";}
  @PostMapping("/account/password") public String password(Principal p,@Valid @ModelAttribute("passwordForm") PasswordChangeForm f,BindingResult errors,Model m,HttpServletRequest request,HttpServletResponse response,Authentication auth){
   if(errors.hasErrors())return hub(p,"security",0,false,m);

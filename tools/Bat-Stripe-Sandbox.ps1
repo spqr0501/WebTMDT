@@ -1,19 +1,25 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $stripeRoot = Split-Path -Parent $PSScriptRoot
 $stripeLocal = Join-Path $stripeRoot '.local'
 $stripeSettingsPath = Join-Path $stripeLocal 'stripe.properties'
 $stripeExe = Join-Path $stripeLocal 'tools/stripe.exe'
-if (!(Test-Path -LiteralPath $stripeSettingsPath) -or !(Test-Path -LiteralPath $stripeExe)) { throw 'Thiếu cấu hình Stripe cục bộ hoặc Stripe CLI. Xem docs/STRIPE-SANDBOX.md.' }
+if (!(Test-Path -LiteralPath $stripeSettingsPath)) { throw 'Chưa có cấu hình riêng. Chạy THIET_LAP_STRIPE.cmd ở thư mục gốc dự án.' }
+if (!(Test-Path -LiteralPath $stripeExe)) { & (Join-Path $PSScriptRoot 'Cai-Stripe-CLI.ps1') }
 $stripeSettings = @{}
 foreach ($line in [IO.File]::ReadAllLines($stripeSettingsPath)) { if ($line -match '^([^#=]+)=(.*)$') { $stripeSettings[$matches[1].Trim()] = $matches[2].Trim() } }
 $stripeKey = $stripeSettings['app.stripe.secret-key']
 if (!$stripeKey -or ($stripeKey -notmatch '^(sk_test_|rk_test_)')) { throw 'Chỉ được sử dụng khóa Stripe thử nghiệm.' }
+$stripeBaseUrl = $stripeSettings['app.stripe.base-url']
+if (!$stripeBaseUrl) { $stripeBaseUrl = 'http://localhost:8080' }
+$stripeBaseUri = [uri]$stripeBaseUrl
+if (!$stripeBaseUri.IsAbsoluteUri -or $stripeBaseUri.UserInfo -or $stripeBaseUri.Query -or $stripeBaseUri.Fragment -or $stripeBaseUri.AbsolutePath -ne '/' -or ($stripeBaseUri.Scheme -ne 'https' -and !($stripeBaseUri.Scheme -eq 'http' -and $stripeBaseUri.Host -in @('localhost','127.0.0.1','[::1]')))) { throw 'app.stripe.base-url phải là localhost dùng HTTP hoặc tên miền HTTPS, không kèm đường dẫn hay thông tin đăng nhập.' }
+$stripeForwardUrl = $stripeBaseUrl.TrimEnd('/') + '/payments/stripe/webhook'
 $stripeLog = Join-Path $stripeLocal 'stripe-webhook.log'
 $stripeErrorLog = Join-Path $stripeLocal 'stripe-webhook-error.log'
 $stripePidPath = Join-Path $stripeLocal 'stripe-webhook.pid'
 $stripeFingerprintPath = Join-Path $stripeLocal 'stripe-webhook.key-fingerprint'
 $stripeHasher = [Security.Cryptography.SHA256]::Create()
-try { $stripeFingerprint = [BitConverter]::ToString($stripeHasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($stripeKey))).Replace('-', '') } finally { $stripeHasher.Dispose() }
+try { $stripeFingerprint = [BitConverter]::ToString($stripeHasher.ComputeHash([Text.Encoding]::UTF8.GetBytes("$stripeKey|$stripeForwardUrl"))).Replace('-', '') } finally { $stripeHasher.Dispose() }
 $stripeProcess = $null
 if (Test-Path -LiteralPath $stripePidPath) {
  $stripeExistingId = [int]([IO.File]::ReadAllText($stripePidPath).Trim())
@@ -29,7 +35,7 @@ if (!$stripeProcess) {
  try {
   $env:STRIPE_API_KEY = $stripeKey
   $env:STRIPE_CLI_TELEMETRY_OPTOUT = '1'
-  $stripeProcess = Start-Process -FilePath $stripeExe -ArgumentList @('listen', '--events', 'checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired,checkout.session.async_payment_failed', '--forward-to', 'http://localhost:8080/payments/stripe/webhook', '--color', 'off') -WorkingDirectory $stripeRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput $stripeLog -RedirectStandardError $stripeErrorLog
+  $stripeProcess = Start-Process -FilePath $stripeExe -ArgumentList @('listen', '--events', 'checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired,checkout.session.async_payment_failed', '--forward-to', $stripeForwardUrl, '--color', 'off') -WorkingDirectory $stripeRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput $stripeLog -RedirectStandardError $stripeErrorLog
   [IO.File]::WriteAllText($stripePidPath, [string]$stripeProcess.Id)
   [IO.File]::WriteAllText($stripeFingerprintPath, $stripeFingerprint)
  } finally { $env:STRIPE_API_KEY = $stripeOldKey; $env:STRIPE_CLI_TELEMETRY_OPTOUT = $stripeOldTelemetry }
@@ -55,5 +61,5 @@ $stripeContent = [IO.File]::ReadAllText($stripeSettingsPath)
 if ($stripeContent -match '(?m)^app\.stripe\.webhook-secret=') { $stripeContent = [regex]::Replace($stripeContent, '(?m)^app\.stripe\.webhook-secret=.*$', 'app.stripe.webhook-secret=' + $stripeSecret) }
 else { $stripeContent += "`napp.stripe.webhook-secret=$stripeSecret`n" }
 [IO.File]::WriteAllText($stripeSettingsPath, $stripeContent, [Text.UTF8Encoding]::new($false))
-Write-Output 'Đã kết nối webhook Stripe Sandbox đến localhost:8080 và lưu cấu hình riêng. Không phát sinh giao dịch.'
+Write-Output "Đã kết nối webhook Stripe Sandbox đến $stripeBaseUrl và lưu cấu hình riêng. Không phát sinh giao dịch."
 Write-Output 'Khởi động lại Spring Boot App để đọc cấu hình. Giữ máy và kết nối mạng hoạt động khi dùng Stripe Sandbox.'

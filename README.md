@@ -1,6 +1,6 @@
 # Tiệm bánh ngọt Bóng Bakery
 
-> Cập nhật 28/10/2026: `database/` chỉ dùng một file chính thức `BONG_BAKERY_SQL_SERVER.sql` cho cài mới. Các file nâng cấp riêng được giữ trong `database/LUU_TRU_SQL_CU_2026-10-28.zip`; các số file bên dưới là lịch sử. Database SPQR đã nâng cấp không cần chạy lại.
+> Cập nhật 29/10/2026: dùng một file `database/BONG_BAKERY_SQL_SERVER.sql` cho cài mới hoặc đặt lại bộ mẫu. Đã có 5 tài khoản, 5 đơn, 2 bánh riêng và voucher. Giữ `@XoaDuLieuCu=0` để bảo vệ database cũ; đổi thành 1 sẽ xóa toàn bộ và tạo lại. Các số file nâng cấp bên dưới là lịch sử; xem hướng dẫn mới ở cuối README.
 
 ## Stripe Sandbox
 
@@ -54,7 +54,7 @@ Xem [hướng dẫn chạy SQL Server bằng tài khoản Windows](docs/CHAY-SQL
 
 ## Cơ sở dữ liệu và tài liệu
 
-- [File SQL Server đầy đủ, tên bảng/cột tiếng Việt](database/BONG_BAKERY_SQL_SERVER.sql): các bảng, khóa và chỉ mục, 13 danh mục và 39 bánh mẫu có ảnh và mô tả; đã hợp nhất toàn bộ nâng cấp. Chỉ chạy khi chưa có các bảng.
+- [File SQL Server đầy đủ, tên bảng/cột tiếng Việt](database/BONG_BAKERY_SQL_SERVER.sql): các bảng, khóa và chỉ mục, 13 danh mục và 39 bánh mẫu có ảnh và mô tả; đã hợp nhất toàn bộ nâng cấp. Cài mới hoặc chủ động đặt lại bằng tùy chọn `@XoaDuLieuCu`; xem `database/README.md`.
 - [Thiết kế dữ liệu và kế hoạch](docs/THIET-KE.md).
 - [Quy tắc mã giảm giá](docs/VOUCHER.md).
 - [Kiểm thử](docs/KIEM-THU.md).
@@ -194,3 +194,19 @@ Xem thao tác và quy tắc tại [Hướng dẫn chức năng đặt bánh mớ
 Đã bổ sung hồ sơ đổi trả cho khách/admin, ảnh minh chứng riêng tư, duyệt/từ chối, hoàn từng phần thực tế, đổi bánh/làm lại và phiếu hỗ trợ hai chiều. Nút tròn màu hồng góc phải dưới mở trợ lý ngay trên trang, dùng chung hội thoại với /assistant, có giá/ảnh/nguồn và chuyển nhân viên qua phiếu. Trợ lý dùng quy tắc và dữ liệu cửa hàng, chưa kết nối AI tạo sinh/LLM.
 
 Máy SPQR/cake_shop đã nâng cấp file 09. Database cũ máy khác chạy 08 rồi 09; cài mới dùng 01. Không chạy lại 01 lên dữ liệu đang dùng. Khởi động lại Spring Boot để nạp mã mới. Hướng dẫn ở docs/DOI-TRA-VA-TRO-LY.md; đối chiếu 5 nhóm ở docs/DOI-CHIEU-5-YEU-CAU.md. Kết quả cuối: 57 bài Java/Spring và 10 JavaScript đạt, SQL Server khởi động/schema đạt; giới hạn ở docs/KET-QUA-KIEM-THU-DOI-TRA-HO-TRO.md.
+
+### Quản trị viên và thông tin cửa hàng
+
+Xem hướng dẫn [tạo tài khoản quản trị trong Eclipse](docs/TAO-TAI-KHOAN-QUAN-TRI.md). Trang Câu Chuyện và Liên hệ đã bổ sung điện thoại, giờ nhận bánh và bản đồ địa chỉ mẫu.
+
+### Bản tải từ GitHub: Stripe và bộ mẫu
+
+- Mở `THIET_LAP_STRIPE.cmd` để thiết lập khóa thử riêng, tải CLI và nối webhook trên máy mới. Xem [hướng dẫn Stripe](docs/STRIPE-SANDBOX.md). Không đưa `.local/` lên GitHub.
+- [File SQL tổng](database/BONG_BAKERY_SQL_SERVER.sql) đã gồm 5 tài khoản (có shipper), 5 tình huống đơn, 2 bánh riêng, voucher và tùy chọn xóa dữ liệu cũ. Xem [cách nạp và thực hành](docs/DU-LIEU-MAU-VA-TINH-HUONG.md).
+- QR nhận bánh tự tạo khi mở chi tiết đơn nhận quầy; khách có nút tải ảnh QR, admin tra tại `/admin/pickup`.
+
+### Cập nhật giỏ, mặc định và kiểm thử 29/10/2026
+
+Giỏ đăng nhập lưu theo tài khoản, gộp giỏ khách khi đăng nhập; có địa chỉ mặc định và nhớ hình thức nhận/khung giờ. Checkout dùng lịch tiếng Việt; đơn hàng có các khung rõ ràng. Hoàn tiền sau hủy theo dõi bắt buộc tại `/admin/refunds`, cần thông tin đối soát trước khi ghi sổ.
+
+Đã nạp bộ mẫu sạch lên SQL Server và kiểm thử: 104 Java/Spring + 24 JavaScript + 17 tình huống HTTP đạt. Xem [báo cáo 29/10/2026](docs/KET-QUA-KIEM-THU-2026-10-29.md) và [quy tắc giỏ/hoàn tiền](docs/GIO-TAI-KHOAN-VA-HOAN-TIEN.md). File SQL tổng hiện có 26 bảng, nâng cấp đến phần 19.

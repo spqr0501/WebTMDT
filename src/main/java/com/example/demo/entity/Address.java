@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name="dia_chi")
 public class Address {
+@Column(name="mac_dinh",nullable=false) private boolean defaultAddress;
+public boolean getDefaultAddress(){return defaultAddress;} public void setDefaultAddress(boolean v){defaultAddress=v;}
+
 @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
 @ManyToOne(optional=false) @JoinColumn(name="nguoi_dung_id") private User user;
 @org.hibernate.annotations.Nationalized @Column(name="nguoi_nhan",nullable=false,length=100) private String recipient;

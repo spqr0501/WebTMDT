@@ -41,5 +41,14 @@ public int getUsedCount() { return usedCount; }
 public void setUsedCount(int value) { this.usedCount=value; }
 public boolean getActive() { return active; }
 public void setActive(boolean value) { this.active=value; }
+@Transient public String getStatusLabel() {
+ LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+ if (endsAt != null && !now.isBefore(endsAt)) return "Đã hết hạn";
+ if (!active) return "Đã tắt";
+ if (startsAt != null && now.isBefore(startsAt)) return "Chưa đến hạn";
+ if (usedCount >= usageLimit) return "Hết lượt dùng";
+ return "Đang áp dụng";
+}
+@Transient public boolean getCurrentlyApplicable() { return "Đang áp dụng".equals(getStatusLabel()); }
 
 }

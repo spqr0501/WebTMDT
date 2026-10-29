@@ -10,5 +10,5 @@ public final class PaymentPolicy {
   }else{summary.setPlan((method==PaymentMethod.BANK_TRANSFER||method==PaymentMethod.STRIPE)?PaymentPlan.FULL:PaymentPlan.ON_RECEIPT);summary.setRequiredUpfront((method==PaymentMethod.BANK_TRANSFER||method==PaymentMethod.STRIPE)?total:BigDecimal.ZERO);}
  }
  public static void requireUpfront(PaymentSummary summary){if(summary.getUpfrontRemaining().signum()>0)throw new BusinessException("Chưa đủ tiền cần thanh toán trước. Hãy đối soát và ghi nhận tiền trước khi xác nhận / chuẩn bị bánh.");}
- public static void requireSettled(PaymentSummary summary,BigDecimal total){if(summary.remaining(total).signum()>0)throw new BusinessException("Cần ghi nhận đủ số tiền còn lại trước khi hoàn thành đơn nhận tại cửa hàng.");}
+ public static void requireSettled(PaymentSummary summary,BigDecimal total){if(summary.remaining(total).signum()>0)throw new BusinessException("Cần ghi nhận đủ số tiền còn lại trước khi hoàn thành đơn hàng.");}
 }

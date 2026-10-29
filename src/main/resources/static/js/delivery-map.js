@@ -10,7 +10,7 @@
    info.textContent=t.driverName?`${t.driverName} · ${t.driverPhone||'Liên hệ cửa hàng'}${t.vehicle?' · '+t.vehicle:''}`:'Cửa hàng chưa phân công shipper.';
    const stale=t.stale||(t.updatedAt&&Date.now()-Date.parse(t.updatedAt)>90000);
    state.textContent=t.handedOver?'Shipper đã báo bàn giao bánh. Cửa hàng đang kiểm tra để hoàn tất đơn.':t.issue?'Đơn đang có sự cố giao hàng. Vui lòng liên hệ cửa hàng.':t.sharing?(stale?'Vị trí đã cũ, chưa có cập nhật mới.':'Shipper đang chia sẻ vị trí trong lúc giao bánh.'):`${t.status} · Chưa có vị trí GPS đang được chia sẻ.`;
-   time.textContent=t.updatedAt?`Vị trí ghi nhận: ${new Date(t.updatedAt).toLocaleString('vi-VN')} · Sai số khoảng ${Math.round(t.accuracy||0)} m. Đường đi và giờ đến chưa được ước tính.`:'Không dùng vị trí giả hoặc đường di chuyển mô phỏng.';
+   time.textContent=t.updatedAt?`Vị trí ghi nhận: ${new Date(t.updatedAt).toLocaleString('vi-VN')} · Sai số khoảng ${Math.round(t.accuracy||0)} m. Đường đi và giờ đến chưa được ước tính.`:'';
    if(!map)return;
    if(t.destinationLatitude!==null&&t.destinationLongitude!==null){if(!destination)destination=L.circleMarker([t.destinationLatitude,t.destinationLongitude],{radius:9,color:'#2862a8',fillOpacity:.8}).bindTooltip('Điểm nhận bánh').addTo(map);}
    if(t.sharing&&t.latitude!==null&&t.longitude!==null){const p=[t.latitude,t.longitude];if(driverMarker)driverMarker.setLatLng(p);else driverMarker=L.marker(p,{icon:L.divIcon({className:'map-driver-icon',html:'🚚',iconSize:[36,36],iconAnchor:[18,18]})}).bindTooltip('Vị trí shipper chia sẻ').addTo(map);if(accuracyCircle)accuracyCircle.remove();accuracyCircle=L.circle(p,{radius:Math.min(10000,t.accuracy||10),color:stale?'#777':'#b52c70',weight:1,fillOpacity:.08}).addTo(map);}

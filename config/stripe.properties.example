@@ -1,0 +1,7 @@
+# Copy to .local/stripe.properties; never commit the private file.
+# Hosted Checkout needs the secret test key; no public key is required here.
+app.stripe.enabled=false
+app.stripe.secret-key=
+# Filled automatically by tools/Bat-Stripe-Sandbox.ps1.
+app.stripe.webhook-secret=
+app.stripe.base-url=http://localhost:8080

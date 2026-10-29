@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.time.*;
 @Entity @Table(name="yeu_cau_banh_rieng")
 public class CustomCakeRequest {
+@Column(name="vi_do") private Double latitude;
+@Column(name="kinh_do") private Double longitude;
+public Double getLatitude(){return latitude;} public void setLatitude(Double v){latitude=v;}
+public Double getLongitude(){return longitude;} public void setLongitude(Double v){longitude=v;}
+
 @Column(name="ngay_hoan_thanh") private LocalDateTime completedAt;
 public LocalDateTime getCompletedAt(){return completedAt;} public void setCompletedAt(LocalDateTime v){completedAt=v;}
 @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;

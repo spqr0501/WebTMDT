@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="status(p,cancelled)" th:if="${cancelled}" id="refundStatus" class="panel card card-body mt-4">
+ <h2 class="h5">Hoàn tiền sau hủy</h2>
+ <div th:if="${p.paid.signum()>0}" class="alert alert-danger mb-0"><strong>Cần hoàn: <span th:text="${#numbers.formatDecimal(p.paid,0,'POINT',0,'COMMA')+' đ'}"></span></strong><p class="mb-0 mt-2">Đơn đã hủy nhưng cửa hàng còn giữ khoản tiền này. Cửa hàng phải đối chiếu người nhận, hoàn thực tế và lưu mã giao dịch. Hủy đơn chưa đồng nghĩa đã hoàn tiền. Bạn không cần thanh toán thêm.</p></div>
+ <p th:if="${p.paid.signum()==0 and p.refunded.signum()>0}" class="alert alert-success mb-0" th:text="${'Đã ghi nhận hoàn đủ '+#numbers.formatDecimal(p.refunded,0,'POINT',0,'COMMA')+' đ. Xem lịch sử giao dịch phía dưới.'}"></p>
+ <p th:if="${p.paid.signum()==0 and p.refunded.signum()==0}" class="mb-0">Chưa ghi nhận khoản đã thu, hiện không có tiền cần hoàn. Nếu bạn đã thanh toán nhưng chưa thấy cập nhật, hãy gửi mã giao dịch để cửa hàng đối soát.</p>
+</section>
+<fieldset th:fragment="confirmation" class="refund-confirmation border rounded p-3 my-3" data-refund-fields>
+ <legend class="h6">Bắt buộc khi ghi nhận hoàn tiền</legend>
+ <label class="d-block">Cách đã hoàn<select name="refundChannel" class="form-control mb-3" required><option value="">Chọn cách hoàn thực tế</option><option value="BANK_TRANSFER">Đã chuyển khoản hoàn</option><option value="STRIPE_DASHBOARD">Đã hoàn trên Stripe Dashboard</option></select></label>
+ <label class="d-block">Nơi nhận hoàn<input name="refundDestination" minlength="10" maxlength="200" required class="form-control mb-1" placeholder="Ngân hàng · số tài khoản · tên người nhận"></label><p class="small text-muted">Đối chiếu với khách trước khi chuyển. Nếu hoàn trên Stripe, ghi thẻ gốc/mã thanh toán; không nhập đầy đủ số thẻ hoặc CVC.</p>
+ <label class="d-block">Mã giao dịch hoàn thực tế<input name="refundTransactionId" minlength="6" maxlength="100" pattern="[A-Za-z0-9][A-Za-z0-9._:/-]{5,99}" required class="form-control mb-3" placeholder="Mã giao dịch ngân hàng hoặc mã hoàn Stripe"></label>
+ <label class="d-block small"><input type="checkbox" name="refundConfirmed" value="true" required> Tôi đã kiểm tra khoản hoàn thành công thực tế, đúng người nhận và số tiền. Việc lưu này chỉ ghi sổ, không tự chuyển tiền.</label>
+</fieldset>
+</body></html>

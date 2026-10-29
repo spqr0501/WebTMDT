@@ -14,10 +14,10 @@ public class PickupController {
  private final PickupService pickups;private final OrderService orders;private final CustomCakeService custom;
  public PickupController(PickupService pickups,OrderService orders,CustomCakeService custom){this.pickups=pickups;this.orders=orders;this.custom=custom;}
  @GetMapping(value="/orders/{id}/pickup.png",produces=MediaType.IMAGE_PNG_VALUE)
- @ResponseBody public ResponseEntity<byte[]> orderQr(@PathVariable Long id,Principal p){return image(pickups.orderCode(orders.owned(p.getName(),id)));}
+ @ResponseBody public ResponseEntity<byte[]> orderQr(@PathVariable Long id,Principal p,@RequestParam(defaultValue="false") boolean download){return image(pickups.orderCode(orders.owned(p.getName(),id)),"qr-nhan-banh-"+id+".png",download);}
  @GetMapping(value="/custom-cakes/{id}/pickup.png",produces=MediaType.IMAGE_PNG_VALUE)
- @ResponseBody public ResponseEntity<byte[]> customQr(@PathVariable Long id,Principal p){return image(pickups.customCode(custom.owned(p.getName(),id)));}
- private ResponseEntity<byte[]> image(String code){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_PNG).body(pickups.png(code));}
+ @ResponseBody public ResponseEntity<byte[]> customQr(@PathVariable Long id,Principal p,@RequestParam(defaultValue="false") boolean download){return image(pickups.customCode(custom.owned(p.getName(),id)),"qr-banh-rieng-"+id+".png",download);}
+ private ResponseEntity<byte[]> image(String code,String filename,boolean download){var response=ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_PNG);if(download)response.header(HttpHeaders.CONTENT_DISPOSITION,ContentDisposition.attachment().filename(filename).build().toString());return response.body(pickups.png(code));}
  @GetMapping("/admin/pickup") public String page(){return "admin/pickup";}
  @PostMapping("/admin/pickup/lookup") public String lookup(@RequestParam(defaultValue="") String code,@RequestParam(required=false) MultipartFile image,Model m){try{m.addAttribute("ticket",pickups.lookup(image!=null&&!image.isEmpty()?pickups.read(image):code));}catch(BusinessException e){m.addAttribute("pickupError",e.getMessage());}return "admin/pickup";}
  @PostMapping("/admin/pickup/complete") public String complete(@RequestParam String code,Principal p,RedirectAttributes flash){var ticket=pickups.complete(code,p.getName());flash.addFlashAttribute("success","Đã xác nhận bàn giao bánh và gửi thông báo cho khách.");return "redirect:"+ticket.detailUrl();}

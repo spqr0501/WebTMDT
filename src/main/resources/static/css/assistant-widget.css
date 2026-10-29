@@ -11,3 +11,9 @@
 @keyframes assistantOpen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:575px){.bakery-assistant{right:16px;bottom:max(16px,env(safe-area-inset-bottom))}.assistant-panel{width:calc(100vw - 32px);height:560px;max-height:calc(100dvh - 120px);bottom:76px;border-radius:20px}.assistant-launcher{width:58px;height:58px}.assistant-launcher-hint{right:69px;bottom:14px}}
 @media(prefers-reduced-motion:reduce){.assistant-panel{animation:none}.assistant-launcher{transition:none}.assistant-widget-messages{scroll-behavior:auto}}
+
+/* Explicit colors prevent footer typography from hiding widget labels. */
+.bakery-assistant .assistant-panel-heading{background:linear-gradient(120deg,#962553,#a82d66)}
+.bakery-assistant .assistant-panel-heading p,.bakery-assistant .assistant-panel-heading h2,.bakery-assistant .assistant-bubble-user p{color:#fff;opacity:1}
+.bakery-assistant .assistant-widget-login a.btn-primary,.bakery-assistant .assistant-widget-login a.btn-primary:hover{color:#fff!important;background:#a52c68;border-color:#a52c68}
+.bakery-assistant .assistant-widget-login p{color:#523346}
